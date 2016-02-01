@@ -60,3 +60,16 @@ def test_missing_key(fn):
 
     with pytest.raises(KeyError):
         z['x']
+
+
+def test_close(fn):
+    z = Zip(fn)
+
+    z['x'] = b'123'
+    z.close()
+
+    zz = zipfile.ZipFile(fn, mode='r')
+    assert zz.read('x') == b'123'
+
+    with pytest.raises(IOError):
+        z['y'] = b'123'

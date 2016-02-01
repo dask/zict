@@ -27,6 +27,8 @@ class Zip(MutableMapping):
 
     @property
     def file(self):
+        if self.mode == 'closed':
+            raise IOError("File closed")
         if not self._file or not self._file.fp:
             self._file = zipfile.ZipFile(self.filename, mode=self.mode)
         return self._file
@@ -61,6 +63,10 @@ class Zip(MutableMapping):
     def flush(self):
         self.file.fp.flush()
         self.file.close()
+
+    def close(self):
+        self.flush()
+        self.mode = 'closed'
 
     def __enter__(self):
         return self
