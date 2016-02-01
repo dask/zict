@@ -53,3 +53,19 @@ def test_contextmanager(fn):
 
     with open(os.path.join(fn, 'x'), 'rb') as f:
         assert f.read() == b'123'
+
+
+def test_delitem(fn):
+    z = File(fn)
+
+    z['x'] = b'123'
+    assert os.path.exists(os.path.join(z.directory, 'x'))
+    del z['x']
+    assert not os.path.exists(os.path.join(z.directory, 'x'))
+
+
+def test_missing_key(fn):
+    z = File(fn)
+
+    with pytest.raises(KeyError):
+        z['x']

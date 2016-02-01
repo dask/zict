@@ -53,3 +53,10 @@ def test_contextmanager(fn):
 
     zz = zipfile.ZipFile(fn, mode='r')
     assert zz.read('x') == b'123'
+
+
+def test_missing_key(fn):
+    z = Zip(fn)
+
+    with pytest.raises(KeyError):
+        z['x']

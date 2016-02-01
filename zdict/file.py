@@ -26,8 +26,11 @@ class File(MutableMapping):
             os.mkdir(self.directory)
 
     def __getitem__(self, key):
-        with open(os.path.join(self.directory, key), 'rb') as f:
-            result = f.read()
+        try:
+            with open(os.path.join(self.directory, key), 'rb') as f:
+                result = f.read()
+        except OSError:
+            raise KeyError(key)
         return result
 
     def __setitem__(self, key, value):
@@ -43,7 +46,7 @@ class File(MutableMapping):
         return self.keys()
 
     def __delitem__(self, key):
-        os.remove(os.path.join(self.directory, self.key))
+        os.remove(os.path.join(self.directory, key))
 
     def __len__(self):
         return sum(1 for _ in self.keys())
