@@ -4,7 +4,7 @@ import zipfile
 
 import pytest
 
-from zhip import Zhip
+from zdict import Zip
 
 @pytest.yield_fixture
 def fn():
@@ -19,7 +19,7 @@ def fn():
 
 
 def test_simple(fn):
-    z = Zhip(fn)
+    z = Zip(fn)
     assert isinstance(z, MutableMapping)
     assert not z
 
@@ -42,13 +42,13 @@ def test_simple(fn):
 
 
 def test_setitem_typeerror(fn):
-    z = Zhip(fn)
+    z = Zip(fn)
     with pytest.raises(TypeError):
         z['x'] = 123
 
 
 def test_contextmanager(fn):
-    with Zhip(fn) as z:
+    with Zip(fn) as z:
         z['x'] = b'123'
 
     zz = zipfile.ZipFile(fn, mode='r')

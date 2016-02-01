@@ -2,7 +2,7 @@ from collections import MutableMapping
 import zipfile
 
 
-class Zhip(MutableMapping):
+class Zip(MutableMapping):
     """ Mutable Mapping interface to a Zip file
 
     Keys must be strings, values must be bytes
@@ -14,7 +14,7 @@ class Zhip(MutableMapping):
 
     Examples
     --------
-    >>> z = Zhip('myfile.zip')
+    >>> z = Zip('myfile.zip')
     >>> z['x'] = b'123'
     >>> z['x']
     b'123'
@@ -52,7 +52,7 @@ class Zhip(MutableMapping):
     def __iter__(self):
         return self.keys()
 
-    def __delitem__(self):
+    def __delitem__(self, key):
         raise NotImplementedError("Not supported by stdlib zipfile")
 
     def __len__(self):
