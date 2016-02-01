@@ -1,0 +1,55 @@
+from collections import MutableMapping
+import os
+import zipfile
+
+import pytest
+
+from zhip import Zhip
+
+@pytest.yield_fixture
+def fn():
+    filename = '.tmp.zip'
+    if os.path.exists(filename):
+        os.remove(filename)
+
+    yield filename
+
+    if os.path.exists(filename):
+        os.remove(filename)
+
+
+def test_simple(fn):
+    z = Zhip(fn)
+    assert isinstance(z, MutableMapping)
+    assert not z
+
+    assert list(z) == list(z.keys()) == []
+    assert list(z.values()) == []
+    assert list(z.items()) == []
+
+    z['x'] = b'123'
+    assert list(z) == list(z.keys()) == ['x']
+    assert list(z.values()) == [b'123']
+    assert list(z.items()) == [('x', b'123')]
+    assert z['x'] == b'123'
+
+    z.flush()
+    zz = zipfile.ZipFile(fn, mode='r')
+    assert zz.read('x') == b'123'
+
+    z['y'] = b'456'
+    assert z['y'] == b'456'
+
+
+def test_setitem_typeerror(fn):
+    z = Zhip(fn)
+    with pytest.raises(TypeError):
+        z['x'] = 123
+
+
+def test_contextmanager(fn):
+    with Zhip(fn) as z:
+        z['x'] = b'123'
+
+    zz = zipfile.ZipFile(fn, mode='r')
+    assert zz.read('x') == b'123'
