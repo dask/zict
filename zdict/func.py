@@ -1,0 +1,71 @@
+from collections import MutableMapping
+
+class Func(MutableMapping):
+    """ Buffer a MutableMapping with a pair of input/output functions
+
+    >>> def double(x):
+    ...     return x * 2
+
+    >>> def halve(x):
+    ...     return x / 2
+
+    >>> d = dict()
+    >>> f = Func(double, halve, d)
+    >>> f['x'] = 10
+    >>> d
+    {'x': 20}
+    >>> f['x']
+    10
+    """
+    def __init__(self, dump, load, d):
+        self.dump = dump
+        self.load = load
+        self.d = d
+
+    def __getitem__(self, key):
+        return self.load(self.d[key])
+
+    def __setitem__(self, key, value):
+        self.d[key] = self.dump(value)
+
+    def __delitem__(self, key):
+        del self.d[key]
+
+    def keys(self):
+        return self.d.keys()
+
+    def values(self):
+        return map(self.load, self.d.values())
+
+    def items(self):
+        return ((k, self.load(v)) for k, v in self.d.items())
+
+    def __iter__(self):
+        return iter(self.d)
+
+    def __len__(self):
+        return len(self.d)
+
+    def __str__(self):
+        return '%s<->%s: %s' % (funcname(self.dump),
+                                funcname(self.load),
+                                str(self.d))
+
+    def __repr__(self):
+        return '%s<->%s: %s' % (funcname(self.dump),
+                                funcname(self.load),
+                                repr(self.d))
+
+    def flush(self):
+        self.d.flush()
+
+
+def funcname(func):
+    """Get the name of a function."""
+    while hasattr(func, 'func'):
+        func = func.func
+    try:
+        return func.__name__
+    except:
+        return str(func)
+

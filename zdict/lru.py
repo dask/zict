@@ -55,3 +55,6 @@ class LRU(MutableMapping):
 
     def __repr__(self):
         return 'LRU: %s' % repr(self.d)
+
+    def flush(self):
+        self.d.flush()
