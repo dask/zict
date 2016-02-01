@@ -72,4 +72,4 @@ class Zip(MutableMapping):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.flush()
+        self.close()

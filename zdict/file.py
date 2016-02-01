@@ -29,7 +29,7 @@ class File(MutableMapping):
         try:
             with open(os.path.join(self.directory, key), 'rb') as f:
                 result = f.read()
-        except OSError:
+        except (IOError, OSError):
             raise KeyError(key)
         return result
 
