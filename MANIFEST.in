@@ -1,4 +1,4 @@
-recursive-include zhip *.py
+recursive-include zict *.py
 
 include setup.py
 include README.rst

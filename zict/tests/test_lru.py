@@ -1,4 +1,4 @@
-from zdict import LRU
+from zict import LRU
 
 def test_simple():
     d = dict()

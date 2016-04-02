@@ -1,4 +1,4 @@
-from zdict import Func
+from zict import Func
 from collections import MutableMapping
 
 def inc(x):

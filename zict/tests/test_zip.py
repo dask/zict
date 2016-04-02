@@ -4,7 +4,7 @@ import zipfile
 
 import pytest
 
-from zdict import Zip
+from zict import Zip
 
 @pytest.yield_fixture
 def fn():

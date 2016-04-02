@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-from zdict.file import File
+from zict.file import File
 
 @pytest.yield_fixture
 def fn():
