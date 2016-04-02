@@ -2,12 +2,38 @@ from heapdict import heapdict
 from collections import MutableMapping
 
 
+def do_nothing(k, v):
+    pass
+
+
 class LRU(MutableMapping):
-    def __init__(self, n, d):
+    """ Evict Least Recently Used Elements
+
+    Parameters
+    ----------
+    n: int
+        Number of elements to keep
+    d: MutableMapping
+        Dictionary in which to hold elements
+    on_evict: callable
+        Function:: k, v -> action to call on key value pairs prior to eviction
+    weight: callable
+
+    Examples
+    --------
+
+    >>> lru = LRU(2, dict(), on_evict=lambda k, v: print("Lost", k, v))
+    >>> lru['x'] = 1
+    >>> lru['y'] = 2
+    >>> lru['z'] = 3
+    Lost x 1
+    """
+    def __init__(self, n, d, on_evict=do_nothing):
         self.d = d
         self.n = n
         self.heap = heapdict()
         self.i = 0
+        self.on_evict = on_evict
 
     def __getitem__(self, key):
         result = self.d[key]
@@ -20,7 +46,8 @@ class LRU(MutableMapping):
         self.i += 1
         self.heap[key] = self.i
         if len(self.heap) > self.n:
-            k, _ = self.heap.popitem()
+            k, v = self.heap.popitem()
+            self.on_evict(k, v)
             del self.d[k]
 
     def __delitem__(self, key):

@@ -28,3 +28,15 @@ def test_simple():
 
     assert 'a' in str(lru) and '5' in str(lru)
     assert 'a' in repr(lru) and '5' in repr(lru)
+
+
+def test_callbacks():
+    L = list()
+    d = dict()
+    lru = LRU(2, d, on_evict=lambda k, v: L.append((k, v)))
+
+    lru['x'] = 1
+    lru['y'] = 2
+    lru['z'] = 3
+
+    assert L == [('x', 1)]

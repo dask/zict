@@ -15,7 +15,7 @@ class Func(MutableMapping):
     >>> d
     {'x': 20}
     >>> f['x']
-    10
+    10.0
     """
     def __init__(self, dump, load, d):
         self.dump = dump
