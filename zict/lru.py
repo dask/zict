@@ -1,5 +1,7 @@
-from heapdict import heapdict
+from __future__ import absolute_import, division, print_function
+
 from collections import MutableMapping
+from heapdict import heapdict
 
 
 def do_nothing(k, v):
@@ -17,11 +19,9 @@ class LRU(MutableMapping):
         Dictionary in which to hold elements
     on_evict: callable
         Function:: k, v -> action to call on key value pairs prior to eviction
-    weight: callable
 
     Examples
     --------
-
     >>> lru = LRU(2, dict(), on_evict=lambda k, v: print("Lost", k, v))
     >>> lru['x'] = 1
     >>> lru['y'] = 2

@@ -1,8 +1,20 @@
+from __future__ import absolute_import, division, print_function
+
 from collections import MutableMapping
 
 class Func(MutableMapping):
     """ Buffer a MutableMapping with a pair of input/output functions
 
+    Parameters
+    ----------
+    dump: callable
+        Function to call on value as we set it into the mapping
+    load: callable
+        Function to call on value as we pull it from the mapping
+    d: MutableMapping
+
+    Examples
+    --------
     >>> def double(x):
     ...     return x * 2
 
