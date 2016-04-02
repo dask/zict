@@ -16,11 +16,11 @@ class Zip(MutableMapping):
 
     Examples
     --------
-    >>> z = Zip('myfile.zip')
-    >>> z['x'] = b'123'
-    >>> z['x']
+    >>> z = Zip('myfile.zip')  # doctest: +SKIP
+    >>> z['x'] = b'123'  # doctest: +SKIP
+    >>> z['x']  # doctest: +SKIP
     b'123'
-    >>> z.flush()  # flush and write metadata to disk
+    >>> z.flush()  # flush and write metadata to disk  # doctest: +SKIP
     """
     def __init__(self, filename, mode='a'):
         self.filename = filename

@@ -16,8 +16,8 @@ class File(MutableMapping):
 
     Examples
     --------
-    >>> z = File('myfile')
-    >>> z['x'] = b'123'
+    >>> z = File('myfile')  # doctest: +SKIP
+    >>> z['x'] = b'123'  # doctest: +SKIP
     >>> z['x']  # doctest: +SKIP
     b'123'
     """
