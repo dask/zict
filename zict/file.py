@@ -18,7 +18,7 @@ class File(MutableMapping):
     --------
     >>> z = File('myfile')
     >>> z['x'] = b'123'
-    >>> z['x']
+    >>> z['x']  # doctest: +SKIP
     b'123'
     """
     def __init__(self, directory, mode='a'):
