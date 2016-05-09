@@ -73,3 +73,12 @@ def test_close(fn):
 
     with pytest.raises(IOError):
         z['y'] = b'123'
+
+
+def test_bytearray(fn):
+    data = bytearray(b'123')
+    with Zip(fn) as z:
+        z['x'] = data
+
+    with Zip(fn) as z:
+        assert z['x'] == b'123'
