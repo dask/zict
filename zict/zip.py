@@ -39,8 +39,6 @@ class Zip(MutableMapping):
         return self.file.read(key)
 
     def __setitem__(self, key, value):
-        if not isinstance(value, (bytes, bytearray)):
-            raise TypeError("Value must be of type bytes")
         self.file.writestr(key, value)
 
     def keys(self):

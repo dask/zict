@@ -36,8 +36,6 @@ class File(MutableMapping):
         return result
 
     def __setitem__(self, key, value):
-        if not isinstance(value, bytes):
-            raise TypeError("Value must be of type bytes")
         with open(os.path.join(self.directory, key), 'wb') as f:
             f.write(value)
 
