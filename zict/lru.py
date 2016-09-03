@@ -50,13 +50,18 @@ class LRU(MutableMapping):
     def __setitem__(self, key, value):
         if key in self.d:
             del self[key]
-        self.d[key] = value
-        self.i += 1
-        self.heap[key] = self.i
 
         weight = self.weight(key, value)
-        self.weights[key] = weight
-        self.total_weight += weight
+
+        if weight <= self.n:
+            self.d[key] = value
+            self.i += 1
+            self.heap[key] = self.i
+
+            self.weights[key] = weight
+            self.total_weight += weight
+        else:
+            self.on_evict(key, value)
 
         while self.total_weight > self.n:
             k, priority = self.heap.popitem()

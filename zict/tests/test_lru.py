@@ -74,3 +74,7 @@ def test_weight():
 
     del lru['z']
     assert lru.total_weight == 4
+
+    lru['a'] = 10000
+    assert 'a' not in lru
+    assert d == {'y': 4}

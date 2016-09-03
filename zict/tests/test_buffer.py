@@ -38,3 +38,8 @@ def test_simple():
 
     buff['a'] = 5
     assert set(buff) == set(buff.keys()) == {'a', 'x'}
+
+    fast_keys = set(buff.fast)
+    buff['b'] = 1000
+    assert 'b' in buff.slow
+    assert set(buff.fast) == fast_keys
