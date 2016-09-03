@@ -30,6 +30,21 @@ def test_simple():
     assert 'a' in repr(lru) and '5' in repr(lru)
 
 
+def test_overwrite():
+    d = dict()
+    lru = LRU(2, d)
+
+    lru['x'] = 1
+    lru['y'] = 2
+    lru['y'] = 3
+
+    assert set(lru) == {'x', 'y'}
+
+    lru.update({'y': 4})
+
+    assert set(lru) == {'x', 'y'}
+
+
 def test_callbacks():
     L = list()
     d = dict()

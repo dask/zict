@@ -48,6 +48,8 @@ class LRU(MutableMapping):
         return result
 
     def __setitem__(self, key, value):
+        if key in self.d:
+            del self[key]
         self.d[key] = value
         self.i += 1
         self.heap[key] = self.i
