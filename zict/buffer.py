@@ -1,6 +1,6 @@
 from collections import MutableMapping
 
-from toolz import concat
+from itertools import chain
 
 from .lru import LRU
 
@@ -61,19 +61,19 @@ class Buffer(MutableMapping):
             raise KeyError(key)
 
     def keys(self):
-        return concat([self.fast.keys(), self.slow.keys()])
+        return chain(self.fast.keys(), self.slow.keys())
 
     def values(self):
-        return concat([self.fast.values(), self.slow.values()])
+        return chain(self.fast.values(), self.slow.values())
 
     def items(self):
-        return concat([self.fast.items(), self.slow.items()])
+        return chain(self.fast.items(), self.slow.items())
 
     def __len__(self):
         return len(self.fast) + len(self.slow)
 
     def __iter__(self):
-        return concat([iter(self.fast), iter(self.slow)])
+        return chain(iter(self.fast), iter(self.slow))
 
     def __contains__(self, key):
         return key in self.fast or key in self.slow
