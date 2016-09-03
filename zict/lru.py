@@ -57,10 +57,9 @@ class LRU(MutableMapping):
         self.total_weight += weight
 
         while self.total_weight > self.n:
-            k, v = self.heap.popitem()
+            k, priority = self.heap.popitem()
             self.total_weight -= self.weights.pop(k)
-            self.on_evict(k, v)
-            del self.d[k]
+            self.on_evict(k, self.d.pop(k))
 
     def __delitem__(self, key):
         del self.d[key]
