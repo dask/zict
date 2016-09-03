@@ -8,9 +8,10 @@ from .lru import LRU
 class Buffer(MutableMapping):
     """ Buffer one dictionary on top of another
 
-    This creates a MutableMapping by combining two others.  The first mutable
-    mapping must evict elements at a certain point and accept an ``on_evict``
-    callback.  The ``LRU`` mapping within this library satisfies this.
+    This creates a MutableMapping by combining two MutableMappings, one that
+    feeds into the other when it overflows, based on an LRU mechanism.  When
+    the first evicts elements these get placed into the second.  When an item
+    is retrieved from the second it is placed back into the first.
 
     Parameters
     ----------
@@ -19,9 +20,15 @@ class Buffer(MutableMapping):
 
     Examples
     --------
-    >>> fast = LRU(2, dict(), on_evict=lambda k, v: print("Lost", k, v))
-    >>> slow = dict()  # usually some on-disk structure
-    >>> buff = Buffer(fast, slow)
+    >>> fast = dict()
+    >>> slow = Func(dumps, loads, File('storage/'))  # doctest: +SKIP
+    >>> def weight(k, v):
+    ...     return sys.getsizeof(v)
+    >>> buff = Buffer(fast, slow, 1e8, weight=weight)  # doctest: +SKIP
+
+    See Also
+    --------
+    LRU
     """
     def __init__(self, fast, slow, n, weight=lambda k, v: 1):
         self.fast = LRU(n, fast, weight=weight, on_evict=self.fast_to_slow)
