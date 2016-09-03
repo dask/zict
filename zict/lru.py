@@ -14,11 +14,14 @@ class LRU(MutableMapping):
     Parameters
     ----------
     n: int
-        Number of elements to keep
+        Number of elements to keep, or total weight if weight= is used
     d: MutableMapping
         Dictionary in which to hold elements
     on_evict: callable
         Function:: k, v -> action to call on key value pairs prior to eviction
+    weight: callable
+        Function:: k, v -> number to determine the size of keeping the item in
+        the mapping.  Defaults to ``(k, v) -> 1``
 
     Examples
     --------
@@ -28,12 +31,15 @@ class LRU(MutableMapping):
     >>> lru['z'] = 3
     Lost x 1
     """
-    def __init__(self, n, d, on_evict=do_nothing):
+    def __init__(self, n, d, on_evict=do_nothing, weight=lambda k, v: 1):
         self.d = d
         self.n = n
         self.heap = heapdict()
         self.i = 0
         self.on_evict = on_evict
+        self.weight = weight
+        self.total_weight = 0
+        self.weights = dict()
 
     def __getitem__(self, key):
         result = self.d[key]
@@ -45,14 +51,21 @@ class LRU(MutableMapping):
         self.d[key] = value
         self.i += 1
         self.heap[key] = self.i
-        if len(self.heap) > self.n:
+
+        weight = self.weight(key, value)
+        self.weights[key] = weight
+        self.total_weight += weight
+
+        while self.total_weight > self.n:
             k, v = self.heap.popitem()
+            self.total_weight -= self.weights.pop(k)
             self.on_evict(k, v)
             del self.d[k]
 
     def __delitem__(self, key):
         del self.d[key]
         del self.heap[key]
+        self.total_weight -= self.weights.pop(key)
 
     def keys(self):
         return self.d.keys()

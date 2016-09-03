@@ -40,3 +40,22 @@ def test_callbacks():
     lru['z'] = 3
 
     assert L == [('x', 1)]
+
+
+def test_weight():
+    d = dict()
+    weight = lambda k, v: v
+    lru = LRU(10, d, weight=weight)
+
+    lru['x'] = 5
+    assert lru.total_weight == 5
+
+    lru['y'] = 4
+    assert lru.total_weight == 9
+
+    lru['z'] = 3
+    assert d == {'y': 4, 'z': 3}
+    assert lru.total_weight == 7
+
+    del lru['z']
+    assert lru.total_weight == 4
