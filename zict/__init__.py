@@ -4,4 +4,6 @@ from .func import Func
 from .lru import LRU
 from .buffer import Buffer
 
+from .rocks import RocksDB
+
 __version__ = '0.0.3'
