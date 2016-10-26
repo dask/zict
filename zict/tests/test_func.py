@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from zict import Func
-from . import common
+from . import utils_test
 
 
 def inc(x):
@@ -42,4 +42,4 @@ def test_mapping():
     """
     d = {}
     z = Func(rotl, rotr, d)
-    common.check_mapping(z)
+    utils_test.check_mapping(z)

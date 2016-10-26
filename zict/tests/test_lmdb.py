@@ -7,7 +7,7 @@ import tempfile
 import pytest
 
 from zict.lmdb import LMDB
-from . import common
+from . import utils_test
 
 
 @pytest.yield_fixture
@@ -25,7 +25,7 @@ def test_mapping(fn):
     Test mapping interface for LMDB().
     """
     z = LMDB(fn)
-    common.check_mapping(z)
+    utils_test.check_mapping(z)
 
 
 def test_reuse(fn):

@@ -6,7 +6,7 @@ import shutil
 import pytest
 
 from zict.file import File
-from . import common
+from . import utils_test
 
 
 @pytest.yield_fixture
@@ -26,7 +26,7 @@ def test_mapping(fn):
     Test mapping interface for File().
     """
     z = File(fn)
-    common.check_mapping(z)
+    utils_test.check_mapping(z)
 
 
 def test_implementation(fn):

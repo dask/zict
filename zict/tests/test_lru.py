@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from zict import LRU
-from . import common
+from . import utils_test
 
 
 def test_simple():
@@ -41,7 +41,7 @@ def test_mapping():
     d = {}
     # 10 is more than the max length when running check_mapping()
     lru = LRU(10, d)
-    common.check_mapping(lru)
+    utils_test.check_mapping(lru)
 
 
 def test_overwrite():

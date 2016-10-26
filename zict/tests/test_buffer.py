@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from zict import Buffer
-from . import common
+from . import utils_test
 
 
 def test_simple():
@@ -55,4 +55,4 @@ def test_mapping():
     a = {}
     b = {}
     buff = Buffer(a, b, n=2)
-    common.check_mapping(buff)
+    utils_test.check_mapping(buff)
