@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import MutableMapping
+import errno
 import os
 
 
@@ -31,7 +32,9 @@ class File(MutableMapping):
         try:
             with open(os.path.join(self.directory, key), 'rb') as f:
                 result = f.read()
-        except (IOError, OSError):
+        except EnvironmentError as e:
+            if e.args[0] != errno.ENOENT:
+                raise
             raise KeyError(key)
         return result
 
@@ -46,7 +49,12 @@ class File(MutableMapping):
         return self.keys()
 
     def __delitem__(self, key):
-        os.remove(os.path.join(self.directory, key))
+        try:
+            os.remove(os.path.join(self.directory, key))
+        except EnvironmentError as e:
+            if e.args[0] != errno.ENOENT:
+                raise
+            raise KeyError(key)
 
     def __len__(self):
         return sum(1 for _ in self.keys())

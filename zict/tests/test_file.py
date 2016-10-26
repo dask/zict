@@ -1,10 +1,13 @@
-from collections import MutableMapping
+from __future__ import absolute_import, division, print_function
+
 import os
 import shutil
 
 import pytest
 
 from zict.file import File
+from . import utils_test
+
 
 @pytest.yield_fixture
 def fn():
@@ -18,27 +21,22 @@ def fn():
         shutil.rmtree(filename)
 
 
-def test_simple(fn):
+def test_mapping(fn):
+    """
+    Test mapping interface for File().
+    """
     z = File(fn)
-    assert isinstance(z, MutableMapping)
+    utils_test.check_mapping(z)
+
+
+def test_implementation(fn):
+    z = File(fn)
     assert not z
 
-    assert list(z) == list(z.keys()) == []
-    assert list(z.values()) == []
-    assert list(z.items()) == []
-
     z['x'] = b'123'
-    assert list(z) == list(z.keys()) == ['x']
-    assert list(z.values()) == [b'123']
-    assert list(z.items()) == [('x', b'123')]
-    assert z['x'] == b'123'
-
     assert os.listdir(fn) == ['x']
     with open(os.path.join(fn, 'x'), 'rb') as f:
         assert f.read() == b'123'
-
-    z['y'] = b'456'
-    assert z['y'] == b'456'
 
 
 def test_setitem_typeerror(fn):

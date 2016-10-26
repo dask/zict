@@ -1,4 +1,8 @@
+from __future__ import absolute_import, division, print_function
+
 from zict import LRU
+from . import utils_test
+
 
 def test_simple():
     d = dict()
@@ -28,6 +32,16 @@ def test_simple():
 
     assert 'a' in str(lru) and '5' in str(lru)
     assert 'a' in repr(lru) and '5' in repr(lru)
+
+
+def test_mapping():
+    """
+    Test mapping interface for LRU().
+    """
+    d = {}
+    # 10 is more than the max length when running check_mapping()
+    lru = LRU(10, d)
+    utils_test.check_mapping(lru)
 
 
 def test_overwrite():
