@@ -84,7 +84,8 @@ class LMDB(MutableMapping):
         # Optimized version of update() using a single putmulti() call.
         if not args:
             raise TypeError("LMDB.update needs an argument")
-        self, *args = args
+        self = args[0]
+        args = args[1:]
         if len(args) > 1:
             raise TypeError('update expected at most 1 arguments, got %d' %
                             len(args))
