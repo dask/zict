@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import MutableMapping
+from collections import Mapping, MutableMapping
 import os
 import sys
 
@@ -79,6 +79,29 @@ class LMDB(MutableMapping):
     def values(self):
         cursor = self.db.begin().cursor()
         return cursor.iternext(keys=False, values=True)
+
+    def update(*args, **kwds):
+        # Optimized version of update() using a single putmulti() call.
+        if not args:
+            raise TypeError("LMDB.update needs an argument")
+        self, *args = args
+        if len(args) > 1:
+            raise TypeError('update expected at most 1 arguments, got %d' %
+                            len(args))
+        items = []
+        if args:
+            other = args[0]
+            if isinstance(other, Mapping) or hasattr(other, "items"):
+                items += other.items()
+            else:
+                # Assuming (key, value) pairs
+                items += other
+        if kwds:
+            items += kwds.items()
+        items = [(_encode_key(k), v) for k, v in items]
+        with self.db.begin(write=True) as txn:
+            consumed, added = txn.cursor().putmulti(items)
+            assert consumed == added == len(items)
 
     def __iter__(self):
         return self.keys()
