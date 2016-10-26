@@ -108,7 +108,8 @@ class LMDB(MutableMapping):
 
     def __delitem__(self, key):
         with self.db.begin(write=True) as txn:
-            txn.delete(_encode_key(key))
+            if not txn.delete(_encode_key(key)):
+                raise KeyError(key)
 
     def __len__(self):
         return self.db.stat()['entries']

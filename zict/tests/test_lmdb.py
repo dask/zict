@@ -59,6 +59,8 @@ def test_mapping(fn):
     del z['abc']
     with pytest.raises(KeyError):
         z['abc']
+    with pytest.raises(KeyError):
+        del z['abc']
     assert 'abc' not in z
     assert set(z) == {'uvw', 'xyz'}
     assert len(z) == 2
