@@ -49,16 +49,39 @@ def test_mapping(fn):
     with pytest.raises(KeyError):
         z['def']
 
+    z.update(xyz=b'707', uvw=b'000')
+    assert set(z.items()) == {('abc', b'456'), ('xyz', b'707'), ('uvw', b'000')}
+    z.update([('xyz', b'654'), ('uvw', b'999')])
+    assert set(z.items()) == {('abc', b'456'), ('xyz', b'654'), ('uvw', b'999')}
+    z.update({'xyz': b'321'})
+    assert set(z.items()) == {('abc', b'456'), ('xyz', b'321'), ('uvw', b'999')}
+
     del z['abc']
     with pytest.raises(KeyError):
         z['abc']
     assert 'abc' not in z
-    assert list(z) == ['xyz']
-    assert len(z) == 1
+    assert set(z) == {'uvw', 'xyz'}
+    assert len(z) == 2
 
     z['def'] = b'\x00\xff'
-    assert len(z) == 2
+    assert len(z) == 3
     assert z['def'] == b'\x00\xff'
     assert 'def' in z
 
-    assert set(z.values()) == {b'123', b'\x00\xff'}
+
+def test_reuse(fn):
+    """
+    Test persistence of a LMDB() mapping.
+    """
+    with LMDB(fn) as z:
+        assert len(z) == 0
+        z['abc'] = b'123'
+
+    with LMDB(fn) as z:
+        assert len(z) == 1
+        assert z['abc'] == b'123'
+
+
+def test_implementation_details(fn):
+    with LMDB(fn) as z:
+        assert os.path.isdir(fn)
