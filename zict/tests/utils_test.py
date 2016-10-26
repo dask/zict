@@ -15,12 +15,12 @@ def check_mapping(z):
     assert len(z) == 0
 
     z['abc'] = b'456'
-    z['xyz'] = b'123'
+    z['xyz'] = b'12'
     assert len(z) == 2
     assert z['abc'] == b'456'
 
     items = list(z.items())
-    assert set(items) == {('abc', b'456'), ('xyz', b'123')}
+    assert set(items) == {('abc', b'456'), ('xyz', b'12')}
     assert list(z.keys()) == [k for k, v in items]
     assert list(z.values()) == [v for k, v in items]
     assert list(z) == [k for k, v in items]

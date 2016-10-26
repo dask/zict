@@ -6,29 +6,32 @@ import sys
 
 
 class Sieve(MutableMapping):
-    """ Buffer one dictionary on top of another
+    """ Store values in different mappings based on their sizes.
 
-    This creates a MutableMapping by combining two MutableMappings, one that
-    feeds into the other when it overflows, based on an LRU mechanism.  When
-    the first evicts elements these get placed into the second.  When an item
-    is retrieved from the second it is placed back into the first.
+    This creates a MutableMapping by combining two MutableMappings,
+    one that stores values strictly smaller (in bytes) than a given
+    threshold, the other storing the other values.
+
+    Only the size of values, not keys, is considered, since keys are
+    likely kept in memory for bookkeeping purposes anyway.
 
     Parameters
     ----------
-    fast: MutableMapping
-    slow: MutableMapping
+    small: MutableMapping
+    large: MutableMapping
+    threshold: int
+        The number of bytes below which values are stored in the *small*
+        mapping.
 
     Examples
     --------
-    >>> fast = dict()
-    >>> slow = Func(dumps, loads, File('storage/'))  # doctest: +SKIP
-    >>> def weight(k, v):
-    ...     return sys.getsizeof(v)
-    >>> buff = Buffer(fast, slow, 1e8, weight=weight)  # doctest: +SKIP
+    >>> small = {}
+    >>> large = Func(dumps, loads, File('storage/'))  # doctest: +SKIP
+    >>> store = Sieve(small, large, threshold=1024 ** 2)  # doctest: +SKIP
 
     See Also
     --------
-    LRU
+    Buffer
     """
     def __init__(self, small, large, threshold):
         self.small = small
@@ -43,8 +46,12 @@ class Sieve(MutableMapping):
 
     def __setitem__(self, key, value):
         if sys.getsizeof(value) < self.threshold:
+            if key in self.large:
+                del self.large[key]
             self.small[key] = value
         else:
+            if key in self.small:
+                del self.small[key]
             self.large[key] = value
 
     def __delitem__(self, key):
