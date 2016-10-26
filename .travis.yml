@@ -19,6 +19,7 @@ install:
   # Install dependencies
   - conda create -n test python=$TRAVIS_PYTHON_VERSION pytest heapdict
   - source activate test
+  - conda install -c conda-forge python-lmdb
 
   - python setup.py install
 
