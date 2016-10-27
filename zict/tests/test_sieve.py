@@ -9,43 +9,53 @@ from . import utils_test
 def test_simple():
     a = {}
     b = {}
-    z = Sieve(a, b, threshold=sys.getsizeof(b'123'))
+    c = {}
+    def selector(k, v):
+        return len(v) % 3
+    mappings = {0: a, 1: b, 2: c}
 
-    z['x'] = b'12'
-    z['y'] = b'3456'
+    d = Sieve(mappings, selector)
+    assert len(d) == 0
 
-    assert z['x'] == b'12'
-    assert z['y'] == b'3456'
-    assert a == {'x': b'12'}
-    assert b == {'y': b'3456'}
+    d['u'] = b'the'
+    d['v'] = b'big'
+    d['w'] = b'brown'
+    d['x'] = b'fox'
+    d['y'] = b'jumps'
+    d['z'] = b'over'
 
-    z['z'] = b'789'
-    assert a == {'x': b'12'}
-    assert b == {'y': b'3456', 'z': b'789'}
+    assert d['u'] == b'the'
+    assert d['v'] == b'big'
+    assert len(d) == 6
 
-    assert 'x' in z
-    assert 'y' in z
-    assert 'missing' not in z
+    assert sorted(d) == ['u', 'v', 'w', 'x', 'y', 'z']
+    assert sorted(d.keys()) == ['u', 'v', 'w', 'x', 'y', 'z']
+    assert sorted(d.values()) == sorted([b'the', b'big', b'brown',
+                                         b'fox', b'jumps', b'over'])
 
-    # Changing existing keys can move values from large to small or vice-versa.
-    z['x'] = b'121212'
-    z['y'] = b'34'
-    assert 'x' in z
-    assert 'y' in z
-    assert a == {'y': b'34'}
-    assert b == {'x': b'121212', 'z': b'789'}
-    assert sorted(z.items()) == [('x', b'121212'),
-                                 ('y', b'34'),
-                                 ('z', b'789'),
-                                 ]
+    assert a == {'u': b'the', 'v': b'big', 'x': b'fox'}
+    assert b == {'z': b'over'}
+    assert c == {'w': b'brown', 'y': b'jumps'}
 
-    del z['y']
-    assert a == {}
-    assert b == {'x': b'121212', 'z': b'789'}
+    # Changing existing keys can move values from one mapping to another.
+    d['w'] = b'lazy'
+    d['x'] = b'dog'
+    assert d['w'] == b'lazy'
+    assert d['x'] == b'dog'
+    assert len(d) == 6
+    assert sorted(d.values()) == sorted([b'the', b'big', b'lazy',
+                                         b'dog', b'jumps', b'over'])
 
-    del z['x']
-    assert a == {}
-    assert b == {'z': b'789'}
+    assert a == {'u': b'the', 'v': b'big', 'x': b'dog'}
+    assert b == {'w': b'lazy', 'z': b'over'}
+    assert c == {'y': b'jumps'}
+
+    del d['v']
+    del d['w']
+    assert len(d) == 4
+    assert 'v' not in d
+    assert 'w' not in d
+    assert sorted(d.values()) == sorted([b'the', b'dog', b'jumps', b'over'])
 
 
 def test_mapping():
@@ -54,5 +64,8 @@ def test_mapping():
     """
     a = {}
     b = {}
-    z = Sieve(a, b, threshold=3)
+    def selector(key, value):
+        return sum(bytearray(value)) & 1
+    mappings = {0: a, 1: b}
+    z = Sieve(mappings, selector)
     utils_test.check_mapping(z)
