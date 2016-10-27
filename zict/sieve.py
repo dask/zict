@@ -23,11 +23,11 @@ class Sieve(MutableMappingBase):
     Examples
     --------
     >>> small = {}
-    >>> large = DataBase()  # doctest: +SKIP
-    >>> mappings = {True: small, False: large}
-    >>> def selector(key, value):
+    >>> large = DataBase()                        # doctest: +SKIP
+    >>> mappings = {True: small, False: large}    # doctest: +SKIP
+    >>> def selector(key, value):                 # doctest: +SKIP
             return sys.getsizeof(value) > 10000
-    >>> d = Sieve(mappings, selector)
+    >>> d = Sieve(mappings, selector)             # doctest: +SKIP
 
     See Also
     --------
