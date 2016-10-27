@@ -1,11 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import MutableMapping, defaultdict
+from collections import defaultdict
 from itertools import chain
 import sys
 
+from .common import MutableMappingBase
 
-class Sieve(MutableMapping):
+
+class Sieve(MutableMappingBase):
     """ Store values in different mappings based on a selector's
     output.
 
@@ -49,6 +51,27 @@ class Sieve(MutableMapping):
 
     def __delitem__(self, key):
         del self.key_to_mapping.pop(key)[key]
+
+    def _do_update(self, items):
+        # Optimized update() implementation issuing a single update()
+        # call per underlying mapping.
+        to_delete = []
+        updates = defaultdict(list)
+        mapping_ids = dict((id(m), m) for m in self.mappings.values())
+
+        for key, value in items:
+            old_mapping = self.key_to_mapping.get(key)
+            mapping = self.mappings[self.selector(key, value)]
+            if old_mapping is not None and old_mapping is not mapping:
+                del old_mapping[key]
+            # Can't hash a mutable mapping, so use its id() instead
+            updates[id(mapping)].append((key, value))
+
+        for mid, mitems in updates.items():
+            mapping = mapping_ids[mid]
+            mapping.update(mitems)
+            for key, _ in mitems:
+                self.key_to_mapping[key] = mapping
 
     def keys(self):
         return chain.from_iterable(self.mappings.values())

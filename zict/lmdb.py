@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Mapping, MutableMapping
 import os
 import sys
+
+from .common import MutableMappingBase
 
 
 if sys.version_info >= (3,):
@@ -20,7 +21,7 @@ else:
         return key
 
 
-class LMDB(MutableMapping):
+class LMDB(MutableMappingBase):
     """ Mutable Mapping interface to a LMDB database.
 
     Keys must be strings, values must be bytes
@@ -80,25 +81,8 @@ class LMDB(MutableMapping):
         cursor = self.db.begin().cursor()
         return cursor.iternext(keys=False, values=True)
 
-    def update(*args, **kwds):
+    def _do_update(self, items):
         # Optimized version of update() using a single putmulti() call.
-        if not args:
-            raise TypeError("LMDB.update needs an argument")
-        self = args[0]
-        args = args[1:]
-        if len(args) > 1:
-            raise TypeError('update expected at most 1 arguments, got %d' %
-                            len(args))
-        items = []
-        if args:
-            other = args[0]
-            if isinstance(other, Mapping) or hasattr(other, "items"):
-                items += other.items()
-            else:
-                # Assuming (key, value) pairs
-                items += other
-        if kwds:
-            items += kwds.items()
         items = [(_encode_key(k), v) for k, v in items]
         with self.db.begin(write=True) as txn:
             consumed, added = txn.cursor().putmulti(items)
