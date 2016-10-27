@@ -39,8 +39,8 @@ def test_mapping():
     Test mapping interface for LRU().
     """
     d = {}
-    # 10 is more than the max length when running check_mapping()
-    lru = LRU(10, d)
+    # 100 is more than the max length when running check_mapping()
+    lru = LRU(100, d)
     utils_test.check_mapping(lru)
 
 

@@ -50,6 +50,8 @@ class Buffer(MutableMapping):
             raise KeyError(key)
 
     def __setitem__(self, key, value):
+        if key in self.slow:
+            del self.slow[key]
         self.fast[key] = value
 
     def __delitem__(self, key):
