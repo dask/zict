@@ -27,6 +27,16 @@ def to_bytestring(s):
         return s.encode('latin1')
 
 
+def check_items(z, expected_items):
+    items = list(z.items())
+    assert len(items) == len(expected_items)
+    assert sorted(items) == sorted(expected_items)
+    # All iterators should walk the mapping in the same order
+    assert list(z.keys()) == [k for k, v in items]
+    assert list(z.values()) == [v for k, v in items]
+    assert list(z) == [k for k, v in items]
+
+
 def stress_test_mapping_updates(z):
     # Certain mappings shuffle between several underlying stores
     # during updates.  This stress tests the internal mapping
@@ -51,16 +61,12 @@ def stress_test_mapping_updates(z):
         r.shuffle(values)
         for k, v in zip(keys, values):
             z[k] = v
-        assert len(z) == len(keys)
-        assert sorted(z) == sorted(keys)
-        assert sorted(z.items()) == sorted(zip(keys, values))
+        check_items(z, list(zip(keys, values)))
 
         r.shuffle(keys)
         r.shuffle(values)
         z.update(zip(keys, values))
-        assert len(z) == len(keys)
-        assert sorted(z) == sorted(keys)
-        assert sorted(z.items()) == sorted(zip(keys, values))
+        check_items(z, list(zip(keys, values)))
 
 
 def check_mapping(z):
@@ -77,11 +83,7 @@ def check_mapping(z):
     assert len(z) == 2
     assert z['abc'] == b'456'
 
-    items = list(z.items())
-    assert set(items) == {('abc', b'456'), ('xyz', b'12')}
-    assert list(z.keys()) == [k for k, v in items]
-    assert list(z.values()) == [v for k, v in items]
-    assert list(z) == [k for k, v in items]
+    check_items(z, [('abc', b'456'), ('xyz', b'12')])
 
     assert 'abc' in z
     assert 'xyz' in z
@@ -91,11 +93,11 @@ def check_mapping(z):
         z['def']
 
     z.update(xyz=b'707', uvw=b'000')
-    assert set(z.items()) == {('abc', b'456'), ('xyz', b'707'), ('uvw', b'000')}
+    check_items(z, [('abc', b'456'), ('xyz', b'707'), ('uvw', b'000')])
     z.update([('xyz', b'654'), ('uvw', b'999')])
-    assert set(z.items()) == {('abc', b'456'), ('xyz', b'654'), ('uvw', b'999')}
+    check_items(z, [('abc', b'456'), ('xyz', b'654'), ('uvw', b'999')])
     z.update({'xyz': b'321'})
-    assert set(z.items()) == {('abc', b'456'), ('xyz', b'321'), ('uvw', b'999')}
+    check_items(z, [('abc', b'456'), ('xyz', b'321'), ('uvw', b'999')])
 
     del z['abc']
     with pytest.raises(KeyError):
