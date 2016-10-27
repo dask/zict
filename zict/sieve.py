@@ -12,12 +12,12 @@ class Sieve(MutableMappingBase):
     output.
 
     This creates a MutableMapping combining several underlying
-    MutableMappings for storage.  Items are dispatcher based on
+    MutableMappings for storage.  Items are dispatched based on
     a selector function provided by the user.
 
     Parameters
     ----------
-    mappings: MutableMapping
+    mappings: dict of {mapping key: MutableMapping}
     selector: callable (key, value) -> mapping key
 
     Examples
@@ -25,9 +25,9 @@ class Sieve(MutableMappingBase):
     >>> small = {}
     >>> large = DataBase()                        # doctest: +SKIP
     >>> mappings = {True: small, False: large}    # doctest: +SKIP
-    >>> def selector(key, value):                 # doctest: +SKIP
-            return sys.getsizeof(value) > 10000
-    >>> d = Sieve(mappings, selector)             # doctest: +SKIP
+    >>> def is_small(key, value):                 # doctest: +SKIP
+            return sys.getsizeof(value) < 10000
+    >>> d = Sieve(mappings, is_small)             # doctest: +SKIP
 
     See Also
     --------
