@@ -1,4 +1,7 @@
+from __future__ import absolute_import, division, print_function
+
 from zict import Buffer
+from . import utils_test
 
 
 def test_simple():
@@ -43,3 +46,13 @@ def test_simple():
     buff['b'] = 1000
     assert 'b' in buff.slow
     assert set(buff.fast) == fast_keys
+
+
+def test_mapping():
+    """
+    Test mapping interface for Buffer().
+    """
+    a = {}
+    b = {}
+    buff = Buffer(a, b, n=2)
+    utils_test.check_mapping(buff)

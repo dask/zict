@@ -1,5 +1,8 @@
+from __future__ import absolute_import, division, print_function
+
 from zict import Func
-from collections import MutableMapping
+from . import utils_test
+
 
 def inc(x):
     return x + 1
@@ -7,10 +10,16 @@ def inc(x):
 def dec(x):
     return x - 1
 
+def rotl(x):
+    return x[1:] + x[:1]
+
+def rotr(x):
+    return x[-1:] + x[:-1]
+
+
 def test_simple():
     d = dict()
     f = Func(inc, dec, d)
-    assert isinstance(f, MutableMapping)
     f['x'] = 10
     assert f['x'] == 10
     assert d['x'] == 11
@@ -25,3 +34,12 @@ def test_simple():
 
     del f['x']
     assert 'x' not in d
+
+
+def test_mapping():
+    """
+    Test mapping interface for Func().
+    """
+    d = {}
+    z = Func(rotl, rotr, d)
+    utils_test.check_mapping(z)
