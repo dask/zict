@@ -1,14 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import MutableMapping
 from heapdict import heapdict
+
+from .common import ZictBase, close
 
 
 def do_nothing(k, v):
     pass
 
 
-class LRU(MutableMapping):
+class LRU(ZictBase):
     """ Evict Least Recently Used Elements
 
     Parameters
@@ -104,3 +105,6 @@ class LRU(MutableMapping):
 
     def flush(self):
         self.d.flush()
+
+    def close(self):
+        close(self.d)

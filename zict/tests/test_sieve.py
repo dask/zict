@@ -69,3 +69,4 @@ def test_mapping():
     mappings = {0: a, 1: b}
     z = Sieve(mappings, selector)
     utils_test.check_mapping(z)
+    utils_test.check_closing(z)

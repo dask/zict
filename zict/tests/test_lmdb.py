@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import gc
 import os
 import shutil
 import tempfile
@@ -41,6 +42,28 @@ def test_reuse(fn):
         assert z['abc'] == b'123'
 
 
-def test_implementation_details(fn):
+def test_creates_dir(fn):
     with LMDB(fn) as z:
         assert os.path.isdir(fn)
+
+
+def test_file_descriptors_dont_leak(fn):
+    psutil = pytest.importorskip('psutil')
+    proc = psutil.Process()
+    before = proc.num_fds()
+
+    z = LMDB(fn)
+    del z
+    gc.collect()
+
+    assert proc.num_fds() == before
+
+    z = LMDB(fn)
+    z.close()
+
+    assert proc.num_fds() == before
+
+    with LMDB(fn) as z:
+        pass
+
+    assert proc.num_fds() == before

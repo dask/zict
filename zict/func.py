@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import MutableMapping
+from .common import ZictBase, close
 
-class Func(MutableMapping):
+
+class Func(ZictBase):
     """ Buffer a MutableMapping with a pair of input/output functions
 
     Parameters
@@ -52,6 +53,9 @@ class Func(MutableMapping):
     def items(self):
         return ((k, self.load(v)) for k, v in self.d.items())
 
+    def _do_update(self, items):
+        self.d.update((k, self.dump(v)) for k, v in items)
+
     def __iter__(self):
         return iter(self.d)
 
@@ -71,6 +75,9 @@ class Func(MutableMapping):
     def flush(self):
         self.d.flush()
 
+    def close(self):
+        close(self.d)
+
 
 def funcname(func):
     """Get the name of a function."""
@@ -80,4 +87,3 @@ def funcname(func):
         return func.__name__
     except:
         return str(func)
-

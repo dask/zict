@@ -56,3 +56,4 @@ def test_mapping():
     b = {}
     buff = Buffer(a, b, n=2)
     utils_test.check_mapping(buff)
+    utils_test.check_closing(buff)

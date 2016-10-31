@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 
-from .common import MutableMappingBase
+from .common import ZictBase
 
 
 if sys.version_info >= (3,):
@@ -21,7 +21,7 @@ else:
         return key
 
 
-class LMDB(MutableMappingBase):
+class LMDB(ZictBase):
     """ Mutable Mapping interface to a LMDB database.
 
     Keys must be strings, values must be bytes
@@ -99,8 +99,5 @@ class LMDB(MutableMappingBase):
     def __len__(self):
         return self.db.stat()['entries']
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        pass
+    def close(self):
+        self.db.close()

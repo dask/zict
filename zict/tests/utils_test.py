@@ -114,3 +114,7 @@ def check_mapping(z):
     assert 'def' in z
 
     stress_test_mapping_updates(z)
+
+
+def check_closing(z):
+    z.close()

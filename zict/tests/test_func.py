@@ -43,3 +43,4 @@ def test_mapping():
     d = {}
     z = Func(rotl, rotr, d)
     utils_test.check_mapping(z)
+    utils_test.check_closing(z)

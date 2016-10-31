@@ -4,10 +4,10 @@ from collections import defaultdict
 from itertools import chain
 import sys
 
-from .common import MutableMappingBase
+from .common import ZictBase, close
 
 
-class Sieve(MutableMappingBase):
+class Sieve(ZictBase):
     """ Store values in different mappings based on a selector's
     output.
 
@@ -98,3 +98,7 @@ class Sieve(MutableMappingBase):
     def flush(self):
         for m in self.mappings.values():
             m.flush()
+
+    def close(self):
+        for m in self.mappings.values():
+            close(m)
