@@ -3,7 +3,10 @@ from __future__ import absolute_import, division, print_function
 from collections import Mapping, MutableMapping
 
 
-class MutableMappingBase(MutableMapping):
+class ZictBase(MutableMapping):
+    """
+    Base class for zict mappings.
+    """
 
     def update(*args, **kwds):
         # Boilerplate for implementing an update() method
@@ -31,3 +34,22 @@ class MutableMappingBase(MutableMapping):
         # Default implementation, can be overriden for speed
         for k, v in items:
             self[k] = v
+
+    def close(self):
+        """
+        Release any system resources held by this object.
+        """
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+
+def close(z):
+    """
+    Close *z* if possible.
+    """
+    if hasattr(z, "close"):
+        z.close()

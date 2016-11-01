@@ -42,6 +42,7 @@ def test_mapping():
     # 100 is more than the max length when running check_mapping()
     lru = LRU(100, d)
     utils_test.check_mapping(lru)
+    utils_test.check_closing(lru)
 
 
 def test_overwrite():

@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import MutableMapping
 import errno
 import os
 
+from .common import ZictBase
 
-class File(MutableMapping):
+
+class File(ZictBase):
     """ Mutable Mapping interface to a directory
 
     Keys must be strings, values must be bytes
@@ -58,9 +59,3 @@ class File(MutableMapping):
 
     def __len__(self):
         return sum(1 for _ in self.keys())
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        pass

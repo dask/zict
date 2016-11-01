@@ -1,11 +1,10 @@
-from collections import MutableMapping
-
 from itertools import chain
 
+from .common import ZictBase, close
 from .lru import LRU
 
 
-class Buffer(MutableMapping):
+class Buffer(ZictBase):
     """ Buffer one dictionary on top of another
 
     This creates a MutableMapping by combining two MutableMappings, one that
@@ -88,3 +87,7 @@ class Buffer(MutableMapping):
     def flush(self):
         self.fast.flush()
         self.slow.flush()
+
+    def close(self):
+        close(self.fast)
+        close(self.slow)
