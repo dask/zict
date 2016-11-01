@@ -90,12 +90,7 @@ class LRU(ZictBase):
         return iter(self.d)
 
     def __contains__(self, key):
-        if key in self.d:
-            self.i += 1
-            self.heap[key] = self.i
-            return True
-        else:
-            return False
+        return key in self.d
 
     def __str__(self):
         return 'LRU: %s' % str(self.d)

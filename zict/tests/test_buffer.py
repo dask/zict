@@ -29,12 +29,19 @@ def test_simple():
     assert 'y' in buff
     assert 'missing' not in buff
 
+    buff['y'] = 1
+    assert a == {'x': 1, 'y': 1, 'z': 8}
+    assert buff.fast.total_weight == 10
+    assert b == {}
+
     del buff['z']
-    assert a == {'x': 1}
-    assert b == {'y': 2}
+    assert a == {'x': 1, 'y': 1}
+    assert buff.fast.total_weight == 2
+    assert b == {}
 
     del buff['y']
     assert a == {'x': 1}
+    assert buff.fast.total_weight == 1
     assert b == {}
 
     assert 'y' not in buff
@@ -43,9 +50,17 @@ def test_simple():
     assert set(buff) == set(buff.keys()) == {'a', 'x'}
 
     fast_keys = set(buff.fast)
+    slow_keys = set(buff.slow)
+    assert not (fast_keys & slow_keys)
+    assert fast_keys | slow_keys == set(buff)
+
+    # Overweight element stays in slow mapping
     buff['b'] = 1000
     assert 'b' in buff.slow
     assert set(buff.fast) == fast_keys
+    assert set(buff.slow) == {'b'} | slow_keys
+    assert 'b' in buff
+    assert buff['b'] == 1000
 
 
 def test_mapping():
