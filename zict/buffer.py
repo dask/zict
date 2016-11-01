@@ -32,26 +32,37 @@ class Buffer(ZictBase):
     def __init__(self, fast, slow, n, weight=lambda k, v: 1):
         self.fast = LRU(n, fast, weight=weight, on_evict=self.fast_to_slow)
         self.slow = slow
+        self.n = n
+        self.weight = weight
 
     def fast_to_slow(self, key, value):
         self.slow[key] = value
 
     def slow_to_fast(self, key):
-        self.fast[key] = self.slow.pop(key)
+        value = self.slow[key]
+        # Avoid useless movement for heavy values
+        if self.weight(key, value) <= self.n:
+            del self.slow[key]
+            self.fast[key] = value
+        return value
 
     def __getitem__(self, key):
         if key in self.fast:
             return self.fast[key]
         elif key in self.slow:
-            self.slow_to_fast(key)
-            return self.fast[key]
+            return self.slow_to_fast(key)
         else:
             raise KeyError(key)
 
     def __setitem__(self, key, value):
-        if key in self.slow:
-            del self.slow[key]
-        self.fast[key] = value
+        weight = self.weight(key, value)
+        # Avoid useless movement for heavy values
+        if self.weight(key, value) <= self.n:
+            if key in self.slow:
+                del self.slow[key]
+            self.fast[key] = value
+        else:
+            self.slow[key] = value
 
     def __delitem__(self, key):
         if key in self.fast:
