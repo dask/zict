@@ -39,6 +39,14 @@ def test_implementation(fn):
         assert f.read() == b'123'
 
 
+def test_str(fn):
+    z = File(fn)
+    assert fn in str(z)
+    assert fn in repr(z)
+    assert z.mode in str(z)
+    assert z.mode in repr(z)
+
+
 def test_setitem_typeerror(fn):
     z = File(fn)
     with pytest.raises(TypeError):

@@ -29,8 +29,8 @@ def test_simple():
     assert list(f.values()) == [10]
     assert list(f.items()) == [('x', 10)]
 
-    assert all(s in str(f) for s in ['inc', 'dec', 'x'])
-    assert all(s in repr(f) for s in ['inc', 'dec', 'x'])
+    assert all(s in str(f) for s in ['inc', 'dec', 'x', 'Func'])
+    assert all(s in repr(f) for s in ['inc', 'dec', 'x', 'Func'])
 
     del f['x']
     assert 'x' not in d
