@@ -93,10 +93,10 @@ class LRU(ZictBase):
         return key in self.d
 
     def __str__(self):
-        return 'LRU: %s' % str(self.d)
+        sub = str(self.d) if not isinstance(self.d, dict) else 'dict'
+        return '<LRU: %s/%s on %s>' % (self.total_weight, self.n, sub)
 
-    def __repr__(self):
-        return 'LRU: %s' % repr(self.d)
+    __repr__ = __str__
 
     def flush(self):
         self.d.flush()

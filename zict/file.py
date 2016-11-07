@@ -29,6 +29,11 @@ class File(ZictBase):
         if not os.path.exists(self.directory):
             os.mkdir(self.directory)
 
+    def __str__(self):
+        return '<File: %s, mode="%s">' % (self.directory, self.mode)
+
+    __repr__ = __str__
+
     def __getitem__(self, key):
         try:
             with open(os.path.join(self.directory, key), 'rb') as f:

@@ -30,8 +30,20 @@ def test_simple():
     lru['a'] = 5
     assert set(lru.keys()) == set(['z', 'a'])
 
-    assert 'a' in str(lru) and '5' in str(lru)
-    assert 'a' in repr(lru) and '5' in repr(lru)
+
+def test_str():
+    d = dict()
+    lru = LRU(2, d)
+
+    lru['x'] = 1
+    lru['y'] = 2
+
+    assert str(lru.total_weight) in str(lru)
+    assert str(lru.total_weight) in repr(lru)
+    assert str(lru.n) in str(lru)
+    assert str(lru.n) in repr(lru)
+    assert 'dict' in str(lru)
+    assert 'dict' in repr(lru)
 
 
 def test_mapping():

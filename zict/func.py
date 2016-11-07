@@ -63,14 +63,11 @@ class Func(ZictBase):
         return len(self.d)
 
     def __str__(self):
-        return '%s<->%s: %s' % (funcname(self.dump),
-                                funcname(self.load),
-                                str(self.d))
+        return '<Func: %s<->%s %s>' % (funcname(self.dump),
+                                       funcname(self.load),
+                                       str(self.d))
 
-    def __repr__(self):
-        return '%s<->%s: %s' % (funcname(self.dump),
-                                funcname(self.load),
-                                repr(self.d))
+    __repr__ = __str__
 
     def flush(self):
         self.d.flush()
