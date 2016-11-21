@@ -2,8 +2,20 @@ from __future__ import absolute_import, division, print_function
 
 import errno
 import os
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
 
 from .common import ZictBase
+
+
+def _safe_key(key):
+    """
+    Escape key so as to be usable on all filesystems.
+    """
+    # Even directory separators are unsafe.
+    return quote(key, safe='')
 
 
 class File(ZictBase):
@@ -36,7 +48,7 @@ class File(ZictBase):
 
     def __getitem__(self, key):
         try:
-            with open(os.path.join(self.directory, key), 'rb') as f:
+            with open(os.path.join(self.directory, _safe_key(key)), 'rb') as f:
                 result = f.read()
         except EnvironmentError as e:
             if e.args[0] != errno.ENOENT:
@@ -45,7 +57,7 @@ class File(ZictBase):
         return result
 
     def __setitem__(self, key, value):
-        with open(os.path.join(self.directory, key), 'wb') as f:
+        with open(os.path.join(self.directory, _safe_key(key)), 'wb') as f:
             f.write(value)
 
     def keys(self):
@@ -56,7 +68,7 @@ class File(ZictBase):
 
     def __delitem__(self, key):
         try:
-            os.remove(os.path.join(self.directory, key))
+            os.remove(os.path.join(self.directory, _safe_key(key)))
         except EnvironmentError as e:
             if e.args[0] != errno.ENOENT:
                 raise

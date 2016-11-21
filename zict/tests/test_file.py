@@ -75,3 +75,16 @@ def test_missing_key(fn):
 
     with pytest.raises(KeyError):
         z['x']
+
+
+def test_arbitrary_chars(fn):
+    z = File(fn)
+
+    key = ''.join(['foo_'] + [chr(i) for i in range(1, 128)])
+    with pytest.raises(KeyError):
+        z[key]
+    z[key] = 'foo'
+    assert z[key] == 'foo'
+    del z[key]
+    with pytest.raises(KeyError):
+        z[key]
