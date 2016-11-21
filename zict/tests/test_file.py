@@ -83,8 +83,8 @@ def test_arbitrary_chars(fn):
     key = ''.join(['foo_'] + [chr(i) for i in range(1, 128)])
     with pytest.raises(KeyError):
         z[key]
-    z[key] = 'foo'
-    assert z[key] == 'foo'
+    z[key] = b'foo'
+    assert z[key] == b'foo'
     del z[key]
     with pytest.raises(KeyError):
         z[key]
