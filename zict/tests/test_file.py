@@ -80,11 +80,14 @@ def test_missing_key(fn):
 def test_arbitrary_chars(fn):
     z = File(fn)
 
-    key = ''.join(['foo_'] + [chr(i) for i in range(1, 128)])
-    with pytest.raises(KeyError):
-        z[key]
-    z[key] = b'foo'
-    assert z[key] == b'foo'
-    del z[key]
-    with pytest.raises(KeyError):
-        z[key]
+    # Avoid hitting the Windows max filename length
+    chunk = 16
+    for i in range(1, 128, chunk):
+        key = ''.join(['foo_'] + [chr(i) for i in range(i, min(128, i + chunk))])
+        with pytest.raises(KeyError):
+            z[key]
+        z[key] = b'foo'
+        assert z[key] == b'foo'
+        del z[key]
+        with pytest.raises(KeyError):
+            z[key]
