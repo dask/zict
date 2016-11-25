@@ -38,6 +38,8 @@ def test_implementation(fn):
     with open(os.path.join(fn, 'x'), 'rb') as f:
         assert f.read() == b'123'
 
+    assert 'x' in z
+
 
 def test_str(fn):
     z = File(fn)
