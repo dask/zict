@@ -41,6 +41,9 @@ class Func(ZictBase):
     def __setitem__(self, key, value):
         self.d[key] = self.dump(value)
 
+    def __contains__(self, key):
+        return key in self.d
+
     def __delitem__(self, key):
         del self.d[key]
 

@@ -60,6 +60,9 @@ class File(ZictBase):
         with open(os.path.join(self.directory, _safe_key(key)), 'wb') as f:
             f.write(value)
 
+    def __contains__(self, key):
+        return os.path.exists(os.path.join(self.directory, _safe_key(key)))
+
     def keys(self):
         return iter(os.listdir(self.directory))
 
