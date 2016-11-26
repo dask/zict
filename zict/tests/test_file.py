@@ -95,9 +95,14 @@ def test_arbitrary_chars(fn):
             z[key]
 
 
-def test_contains(fn):
+def test_non_string_keys(fn):
     z = File(fn)
     z['x'] = b'123'
     assert 'x' in z
     assert 'y' not in z
     assert 1 not in z
+
+    with pytest.raises(KeyError):
+        z[1]
+    with pytest.raises(KeyError):
+        del z[1]

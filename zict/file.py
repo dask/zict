@@ -47,6 +47,8 @@ class File(ZictBase):
     __repr__ = __str__
 
     def __getitem__(self, key):
+        if not isinstance(key, str):
+            raise KeyError(key)
         try:
             with open(os.path.join(self.directory, _safe_key(key)), 'rb') as f:
                 result = f.read()
@@ -70,6 +72,8 @@ class File(ZictBase):
         return self.keys()
 
     def __delitem__(self, key):
+        if not isinstance(key, str):
+            raise KeyError(key)
         try:
             os.remove(os.path.join(self.directory, _safe_key(key)))
         except EnvironmentError as e:
