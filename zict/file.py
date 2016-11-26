@@ -61,7 +61,7 @@ class File(ZictBase):
             f.write(value)
 
     def __contains__(self, key):
-        return os.path.exists(os.path.join(self.directory, _safe_key(key)))
+        return isinstance(key, str) and os.path.exists(os.path.join(self.directory, _safe_key(key)))
 
     def keys(self):
         return iter(os.listdir(self.directory))
