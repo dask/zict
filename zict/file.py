@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function
 import errno
 import os
 try:
-    from urllib.parse import quote
+    from urllib.parse import quote, unquote
 except ImportError:
-    from urllib import quote
+    from urllib import quote, unquote
 
 from .common import ZictBase
 
@@ -18,10 +18,20 @@ def _safe_key(key):
     return quote(key, safe='')
 
 
+def _unsafe_key(key):
+    """
+    Undo the escaping done by _safe_key().
+    """
+    return unquote(key)
+
+
 class File(ZictBase):
     """ Mutable Mapping interface to a directory
 
     Keys must be strings, values must be bytes
+
+    Note this shouldn't be used for interprocess persistence, as keys
+    are cached in memory.
 
     Parameters
     ----------
@@ -38,44 +48,42 @@ class File(ZictBase):
     def __init__(self, directory, mode='a'):
         self.directory = directory
         self.mode = mode
+        self._keys = set()
         if not os.path.exists(self.directory):
             os.mkdir(self.directory)
+        else:
+            for n in os.listdir(self.directory):
+                self._keys.add(_unsafe_key(n))
 
     def __str__(self):
-        return '<File: %s, mode="%s">' % (self.directory, self.mode)
+        return '<File: %s, mode="%s", %d elements>' % (self.directory, self.mode, len(self))
 
     __repr__ = __str__
 
     def __getitem__(self, key):
-        try:
-            with open(os.path.join(self.directory, _safe_key(key)), 'rb') as f:
-                result = f.read()
-        except EnvironmentError as e:
-            if e.args[0] != errno.ENOENT:
-                raise
+        if key not in self._keys:
             raise KeyError(key)
-        return result
+        with open(os.path.join(self.directory, _safe_key(key)), 'rb') as f:
+            return f.read()
 
     def __setitem__(self, key, value):
         with open(os.path.join(self.directory, _safe_key(key)), 'wb') as f:
             f.write(value)
+        self._keys.add(key)
 
     def __contains__(self, key):
-        return os.path.exists(os.path.join(self.directory, _safe_key(key)))
+        return key in self._keys
 
     def keys(self):
-        return iter(os.listdir(self.directory))
+        return iter(self._keys)
 
-    def __iter__(self):
-        return self.keys()
+    __iter__ = keys
 
     def __delitem__(self, key):
-        try:
-            os.remove(os.path.join(self.directory, _safe_key(key)))
-        except EnvironmentError as e:
-            if e.args[0] != errno.ENOENT:
-                raise
+        if key not in self._keys:
             raise KeyError(key)
+        os.remove(os.path.join(self.directory, _safe_key(key)))
+        self._keys.remove(key)
 
     def __len__(self):
-        return sum(1 for _ in self.keys())
+        return len(self._keys)
