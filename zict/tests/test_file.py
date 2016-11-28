@@ -90,6 +90,10 @@ def test_arbitrary_chars(fn):
             z[key]
         z[key] = b'foo'
         assert z[key] == b'foo'
+        assert list(z) == [key]
+        assert list(z.keys()) == [key]
+        assert list(z.items()) == [(key, b'foo')]
+        assert list(z.values()) == [b'foo']
         del z[key]
         with pytest.raises(KeyError):
             z[key]
