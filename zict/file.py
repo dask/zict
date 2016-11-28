@@ -3,9 +3,9 @@ from __future__ import absolute_import, division, print_function
 import errno
 import os
 try:
-    from urllib.parse import quote
+    from urllib.parse import quote, unquote
 except ImportError:
-    from urllib import quote
+    from urllib import quote, unquote
 
 from .common import ZictBase
 
@@ -16,6 +16,13 @@ def _safe_key(key):
     """
     # Even directory separators are unsafe.
     return quote(key, safe='')
+
+
+def _unsafe_key(key):
+    """
+    Undo the escaping done by _safe_key().
+    """
+    return unquote(key)
 
 
 class File(ZictBase):
@@ -44,6 +51,9 @@ class File(ZictBase):
         self._keys = set()
         if not os.path.exists(self.directory):
             os.mkdir(self.directory)
+        else:
+            for n in os.listdir(self.directory):
+                self._keys.add(_unsafe_key(n))
 
     def __str__(self):
         return '<File: %s, mode="%s", %d elements>' % (self.directory, self.mode, len(self))
