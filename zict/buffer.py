@@ -30,7 +30,7 @@ class Buffer(ZictBase):
     LRU
     """
     def __init__(self, fast, slow, n, weight=lambda k, v: 1):
-        self.fast = LRU(n, fast, weight=weight, on_evict=self.fast_to_slow)
+        self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
         self.slow = slow
         self.n = n
         self.weight = weight

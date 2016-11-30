@@ -18,7 +18,7 @@ class LRU(ZictBase):
         Number of elements to keep, or total weight if weight= is used
     d: MutableMapping
         Dictionary in which to hold elements
-    on_evict: callable
+    on_evict: list of callables
         Function:: k, v -> action to call on key value pairs prior to eviction
     weight: callable
         Function:: k, v -> number to determine the size of keeping the item in
@@ -32,12 +32,14 @@ class LRU(ZictBase):
     >>> lru['z'] = 3
     Lost x 1
     """
-    def __init__(self, n, d, on_evict=do_nothing, weight=lambda k, v: 1):
+    def __init__(self, n, d, on_evict=None, weight=lambda k, v: 1):
         self.d = d
         self.n = n
         self.heap = heapdict()
         self.i = 0
-        self.on_evict = on_evict
+        if callable(on_evict):
+            on_evict = [on_evict]
+        self.on_evict = on_evict or []
         self.weight = weight
         self.total_weight = 0
         self.weights = dict()
@@ -62,12 +64,15 @@ class LRU(ZictBase):
             self.weights[key] = weight
             self.total_weight += weight
         else:
-            self.on_evict(key, value)
+            for cb in self.on_evict:
+                cb(key, value)
 
         while self.total_weight > self.n:
             k, priority = self.heap.popitem()
             self.total_weight -= self.weights.pop(k)
-            self.on_evict(k, self.d.pop(k))
+            v = self.d.pop(k)
+            for cb in self.on_evict:
+                cb(k, v)
 
     def __delitem__(self, key):
         del self.d[key]

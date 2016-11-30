@@ -73,15 +73,20 @@ def test_overwrite():
 
 
 def test_callbacks():
+    count = [0]
+    def cb(k, v):
+        count[0] += 1
+
     L = list()
     d = dict()
-    lru = LRU(2, d, on_evict=lambda k, v: L.append((k, v)))
+    lru = LRU(2, d, on_evict=[lambda k, v: L.append((k, v)), cb])
 
     lru['x'] = 1
     lru['y'] = 2
     lru['z'] = 3
 
     assert L == [('x', 1)]
+    assert count[0] == len(L)
 
 
 def test_weight():
