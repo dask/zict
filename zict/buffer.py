@@ -16,6 +16,12 @@ class Buffer(ZictBase):
     ----------
     fast: MutableMapping
     slow: MutableMapping
+    fast_to_slow_callbacks: list of callables
+        These functions run every time data moves from the fast to the slow
+        mapping.  They take two arguments, a key and a value
+    slow_to_fast_callbacks: list of callables
+        These functions run every time data moves form the slow to the fast
+        mapping.
 
     Examples
     --------
@@ -29,14 +35,23 @@ class Buffer(ZictBase):
     --------
     LRU
     """
-    def __init__(self, fast, slow, n, weight=lambda k, v: 1):
+    def __init__(self, fast, slow, n, weight=lambda k, v: 1,
+                 fast_to_slow_callbacks=None, slow_to_fast_callbacks=None):
         self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
         self.slow = slow
         self.n = n
         self.weight = weight
+        if callable(fast_to_slow_callbacks):
+            fast_to_slow_callbacks = [fast_to_slow_callbacks]
+        if callable(slow_to_fast_callbacks):
+            slow_to_fast_callbacks = [slow_to_fast_callbacks]
+        self.fast_to_slow_callbacks = fast_to_slow_callbacks or []
+        self.slow_to_fast_callbacks = slow_to_fast_callbacks or []
 
     def fast_to_slow(self, key, value):
         self.slow[key] = value
+        for cb in self.fast_to_slow_callbacks:
+            cb(key, value)
 
     def slow_to_fast(self, key):
         value = self.slow[key]
@@ -44,6 +59,8 @@ class Buffer(ZictBase):
         if self.weight(key, value) <= self.n:
             del self.slow[key]
             self.fast[key] = value
+        for cb in self.slow_to_fast_callbacks:
+            cb(key, value)
         return value
 
     def __getitem__(self, key):
