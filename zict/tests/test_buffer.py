@@ -72,3 +72,40 @@ def test_mapping():
     buff = Buffer(a, b, n=2)
     utils_test.check_mapping(buff)
     utils_test.check_closing(buff)
+
+
+def test_callbacks():
+    f2s = []
+    def f2s_cb(k, v):
+        f2s.append(k)
+
+    s2f = []
+    def s2f_cb(k, v):
+        s2f.append(k)
+
+    a = dict()
+    b = dict()
+    buff = Buffer(a, b, n=10, weight=lambda k, v: v,
+                  fast_to_slow_callbacks=f2s_cb,
+                  slow_to_fast_callbacks=s2f_cb)
+
+    buff['x'] = 1
+    buff['y'] = 2
+
+    assert buff['x'] == 1
+    assert buff['y'] == 2
+    assert not f2s
+    assert not s2f
+
+    buff['z'] = 8
+
+    assert f2s == ['x']
+    assert s2f == []
+    buff['z']
+
+    assert f2s == ['x']
+    assert s2f == []
+
+    buff['x']
+    assert f2s == ['x', 'y']
+    assert s2f == ['x']
