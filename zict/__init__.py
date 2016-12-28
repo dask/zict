@@ -6,4 +6,4 @@ from .buffer import Buffer
 from .sieve import Sieve
 from .lmdb import LMDB
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
