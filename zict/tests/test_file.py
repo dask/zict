@@ -106,3 +106,10 @@ def test_arbitrary_chars(fn):
         del z[key]
         with pytest.raises(KeyError):
             z[key]
+
+
+def test_write_list_of_bytes(fn):
+    z = File(fn)
+
+    z['x'] = [b'123', b'4567']
+    assert z['x'] == b'1234567'

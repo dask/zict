@@ -44,6 +44,16 @@ class File(ZictBase):
     >>> z['x'] = b'123'  # doctest: +SKIP
     >>> z['x']  # doctest: +SKIP
     b'123'
+
+    Also supports writing lists of bytes objects
+
+    >>> z['y'] = [b'123', b'4567']  # doctest: +SKIP
+    >>> z['y']  # doctest: +SKIP
+    b'1234567'
+
+    Or anything that can be used with file.write, like a memoryview
+
+    >>> z['data'] = np.ones(5).data  # doctest: +SKIP
     """
     def __init__(self, directory, mode='a'):
         self.directory = directory
@@ -68,7 +78,11 @@ class File(ZictBase):
 
     def __setitem__(self, key, value):
         with open(os.path.join(self.directory, _safe_key(key)), 'wb') as f:
-            f.write(value)
+            if isinstance(value, (tuple, list)):
+                for v in value:
+                    f.write(v)
+            else:
+                f.write(value)
         self._keys.add(key)
 
     def __contains__(self, key):
