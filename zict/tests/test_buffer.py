@@ -7,7 +7,7 @@ from . import utils_test
 def test_simple():
     a = dict()
     b = dict()
-    buff = Buffer(a, b, n=10, weight=lambda k, v: v)
+    buff = Buffer(a, b, n=10, weight=lambda k, v: v, keep_slow=False)
 
     buff['x'] = 1
     buff['y'] = 2
