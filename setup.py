@@ -4,9 +4,9 @@ import os
 from setuptools import setup
 
 setup(name='zict',
-      version='0.1.1',
+      version='0.1.2',
       description='Mutable mapping tools',
-      url='http://github.com/mrocklin/zict/',
+      url='http://github.com/dask/zict/',
       maintainer='Matthew Rocklin',
       maintainer_email='mrocklin@gmail.com',
       license='BSD',
