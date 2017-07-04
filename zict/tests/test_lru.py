@@ -110,3 +110,16 @@ def test_weight():
     lru['a'] = 10000
     assert 'a' not in lru
     assert d == {'y': 4}
+
+
+def test_explicit_evict():
+    d = dict()
+    lru = LRU(10, d)
+
+    lru['x'] = 1
+    lru['y'] = 2
+
+    assert set(d) == {'x', 'y'}
+
+    lru.evict()
+    assert set(d) == {'y'}

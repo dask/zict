@@ -68,11 +68,21 @@ class LRU(ZictBase):
                 cb(key, value)
 
         while self.total_weight > self.n:
-            k, priority = self.heap.popitem()
-            self.total_weight -= self.weights.pop(k)
-            v = self.d.pop(k)
-            for cb in self.on_evict:
-                cb(k, v)
+            self.evict()
+
+    def evict(self):
+        """ Evict least recently used key
+
+        This is typically called from internal use, but can be externally
+        triggered as well.
+        """
+        k, priority = self.heap.popitem()
+        weight = self.weights.pop(k)
+        self.total_weight -= weight
+        v = self.d.pop(k)
+        for cb in self.on_evict:
+            cb(k, v)
+        return k, v, weight
 
     def __delitem__(self, key):
         del self.d[key]
