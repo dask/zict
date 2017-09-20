@@ -121,5 +121,8 @@ def test_explicit_evict():
 
     assert set(d) == {'x', 'y'}
 
-    lru.evict()
+    k, v, w = lru.evict()
     assert set(d) == {'y'}
+    assert k == 'x'
+    assert v == 1
+    assert w == 1

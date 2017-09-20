@@ -75,6 +75,12 @@ class LRU(ZictBase):
 
         This is typically called from internal use, but can be externally
         triggered as well.
+
+        Returns
+        -------
+        k: key
+        v: value
+        w: weight
         """
         k, priority = self.heap.popitem()
         weight = self.weights.pop(k)
@@ -82,7 +88,7 @@ class LRU(ZictBase):
         v = self.d.pop(k)
         for cb in self.on_evict:
             cb(k, v)
-        return weight
+        return k, v, weight
 
     def __delitem__(self, key):
         del self.d[key]
