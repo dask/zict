@@ -12,7 +12,7 @@ setup(name='zict',
       license='BSD',
       keywords='mutable mapping,dict,dask',
       packages=['zict'],
-      install_requires=[open('requirements.txt').read().strip().split('\n')],
+      install_requires=open('requirements.txt').read().strip().split('\n'),
       long_description=(open('README.rst').read() if os.path.exists('README.rst')
                         else ''),
       zip_safe=False)
