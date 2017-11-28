@@ -38,11 +38,17 @@ zlib-compressed, directory of files.
 API
 ---
 
-.. autoclass:: zict.lru.LRU
+.. autoclass:: zict.buffer.Buffer
    :members:
 .. autoclass:: zict.file.File
    :members:
 .. autoclass:: zict.func.Func
+   :members:
+.. autoclass:: zict.lmdb.LMDB
+   :members:
+.. autoclass:: zict.lru.LRU
+   :members:
+.. autoclass:: zict.sieve.Sieve
    :members:
 .. autoclass:: zict.zip.Zip
    :members:
