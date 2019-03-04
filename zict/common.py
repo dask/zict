@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Mapping, MutableMapping
+try:
+    from collections.abc import Mapping, MutableMapping
+except ImportError:
+    from collections import Mapping, MutableMapping
 
 
 class ZictBase(MutableMapping):

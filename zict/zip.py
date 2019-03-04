@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import MutableMapping
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 import sys
 import zipfile
 
