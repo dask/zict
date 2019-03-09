@@ -4,7 +4,7 @@ import os
 from setuptools import setup
 
 setup(name='zict',
-      version='0.1.3',
+      version='0.1.4',
       description='Mutable mapping tools',
       url='http://zict.readthedocs.io/en/latest/',
       maintainer='Matthew Rocklin',
