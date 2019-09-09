@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-import errno
 import os
 import pickle
 import uuid
+import struct
 
 try:
     from urllib.parse import quote, unquote
@@ -54,8 +54,7 @@ class _WriteAheadLog:
         """
         with open(self.log_path, 'ab') as f:
             b = pickle.dumps((key, value, action))
-            bytes_len = len(b)
-            f.write(bytes_len.to_bytes(4, 'big'))
+            f.write(struct.pack('>H', len(b)))
             f.write(b)
 
     def get_all_pairs(self):
@@ -68,10 +67,10 @@ class _WriteAheadLog:
         result = []
         with open(self.log_path, 'rb') as f:
             while True:
-                bytes_len_b = f.read(4)
+                bytes_len_b = f.read(2)
                 if not bytes_len_b:
                     break
-                bytes_len = int.from_bytes(bytes_len_b, 'big')
+                bytes_len = struct.unpack('>H', bytes_len_b)[0]
                 payload = f.read(bytes_len)
                 key_val_pair = pickle.loads(payload)
                 result.append(key_val_pair)
