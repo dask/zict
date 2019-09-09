@@ -5,7 +5,7 @@ import shutil
 
 import pytest
 
-from zict.file import File
+from zict.file import File, _WriteAheadLog
 from . import utils_test
 
 
@@ -13,12 +13,18 @@ from . import utils_test
 def fn():
     filename = '.tmp'
     if os.path.exists(filename):
-        shutil.rmtree(filename)
+        if not os.path.isdir(filename):
+            os.remove(filename)
+        else:
+            shutil.rmtree(filename)
 
     yield filename
 
     if os.path.exists(filename):
-        shutil.rmtree(filename)
+        if not os.path.isdir(filename):
+            os.remove(filename)
+        else:
+            shutil.rmtree(filename)
 
 
 def test_mapping(fn):
@@ -113,3 +119,52 @@ def test_write_list_of_bytes(fn):
 
     z['x'] = [b'123', b'4567']
     assert z['x'] == b'1234567'
+
+
+def test_item_with_very_long_name_can_be_read_and_deleted_and_restored(fn):
+    z = File(fn)
+    long_key1 = 'a' + 'a'.join(str(i) for i in range(500))
+    long_key2 = 'b' + 'a'.join(str(i) for i in range(500))
+    z[long_key1] = b'key1'
+    z[long_key2] = b'key2'
+    assert z[long_key1] == b'key1'
+    assert z[long_key2] == b'key2'
+    z2 = File(fn)
+    assert z2[long_key1] == b'key1'
+    assert z2[long_key2] == b'key2'
+    del z2[long_key1]
+    z3 = File(fn)
+    assert long_key1 not in z3
+    assert z3[long_key2] == b'key2'
+
+
+def test_write_ahead_log_can_record_keys_and_replay_them_back(fn):
+    file_path = fn
+    wal = _WriteAheadLog(file_path)
+    expected = [
+        ('key1', 'val1', 'a'),
+        ('key2', 'val2', 'a'),
+        ('key3', 'val3', 'd')
+    ]
+    for key, val, action in expected:
+        wal.write_key_value_and_action(key, val, action)
+
+    vals = wal.get_all_pairs()
+    assert expected == vals
+
+
+def test_write_ahead_log_can_read_keys_from_file_writen_by_another_instance(fn):
+    file_path = fn
+    wal = _WriteAheadLog(file_path)
+    expected = [
+        ('key1', 'val1', 'a'),
+        ('keyxxxx2', 'valllll2', 'a'),
+        ('key3', 'val3', 'd')
+    ]
+    for key, val, action in expected:
+        wal.write_key_value_and_action(key, val, action)
+
+    wal2 = _WriteAheadLog(file_path)
+
+    vals = wal2.get_all_pairs()
+    assert expected == vals
