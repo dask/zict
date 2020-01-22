@@ -1,8 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import MutableMapping
 import random
 import string
+
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 
 import pytest
 
