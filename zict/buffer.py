@@ -72,7 +72,6 @@ class Buffer(ZictBase):
             raise KeyError(key)
 
     def __setitem__(self, key, value):
-        weight = self.weight(key, value)
         # Avoid useless movement for heavy values
         if self.weight(key, value) <= self.n:
             if key in self.slow:
