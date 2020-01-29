@@ -79,6 +79,8 @@ class Buffer(ZictBase):
                 del self.slow[key]
             self.fast[key] = value
         else:
+            if key in self.fast:
+                del self.fast[key]
             self.slow[key] = value
 
     def __delitem__(self, key):
