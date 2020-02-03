@@ -10,6 +10,7 @@ import pytest
 
 from zict import Zip
 
+
 @pytest.yield_fixture
 def fn():
     filename = '.tmp.zip'

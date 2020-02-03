@@ -7,11 +7,14 @@ from . import utils_test
 def inc(x):
     return x + 1
 
+
 def dec(x):
     return x - 1
 
+
 def rotl(x):
     return x[1:] + x[:1]
+
 
 def rotr(x):
     return x[-1:] + x[:-1]

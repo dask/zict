@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, print_function
 
 from collections import defaultdict
 from itertools import chain
-import sys
 
 from .common import ZictBase, close
 
@@ -55,7 +54,6 @@ class Sieve(ZictBase):
     def _do_update(self, items):
         # Optimized update() implementation issuing a single update()
         # call per underlying mapping.
-        to_delete = []
         updates = defaultdict(list)
         mapping_ids = dict((id(m), m) for m in self.mappings.values())
 

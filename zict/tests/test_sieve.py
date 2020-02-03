@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import sys
-
 from zict import Sieve
 from . import utils_test
 
@@ -10,6 +8,7 @@ def test_simple():
     a = {}
     b = {}
     c = {}
+
     def selector(k, v):
         return len(v) % 3
     mappings = {0: a, 1: b, 2: c}
@@ -64,6 +63,7 @@ def test_mapping():
     """
     a = {}
     b = {}
+
     def selector(key, value):
         return sum(bytearray(value)) & 1
     mappings = {0: a, 1: b}

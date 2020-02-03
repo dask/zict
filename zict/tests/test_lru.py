@@ -74,6 +74,7 @@ def test_overwrite():
 
 def test_callbacks():
     count = [0]
+
     def cb(k, v):
         count[0] += 1
 

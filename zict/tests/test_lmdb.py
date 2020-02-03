@@ -43,7 +43,7 @@ def test_reuse(fn):
 
 
 def test_creates_dir(fn):
-    with LMDB(fn) as z:
+    with LMDB(fn):
         assert os.path.isdir(fn)
 
 

@@ -76,10 +76,12 @@ def test_mapping():
 
 def test_callbacks():
     f2s = []
+
     def f2s_cb(k, v):
         f2s.append(k)
 
     s2f = []
+
     def s2f_cb(k, v):
         s2f.append(k)
 

@@ -85,5 +85,5 @@ def funcname(func):
         func = func.func
     try:
         return func.__name__
-    except:
+    except Exception:
         return str(func)
