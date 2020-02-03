@@ -15,4 +15,10 @@ setup(name='zict',
       install_requires=open('requirements.txt').read().strip().split('\n'),
       long_description=(open('README.rst').read() if os.path.exists('README.rst')
                         else ''),
+      classifiers=[
+          "Programming Language :: Python",
+          "Programming Language :: Python :: 3.6",
+          "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
+      ],
       zip_safe=False)
