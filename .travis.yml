@@ -17,7 +17,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test python=$TRAVIS_PYTHON_VERSION pytest flake8 black heapdict
+  - conda create -n test -c conda-forge python=$TRAVIS_PYTHON_VERSION pytest flake8 black heapdict
   - source activate test
   - conda install -c conda-forge python-lmdb psutil
 
