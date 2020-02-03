@@ -35,8 +35,16 @@ class Buffer(ZictBase):
     --------
     LRU
     """
-    def __init__(self, fast, slow, n, weight=lambda k, v: 1,
-                 fast_to_slow_callbacks=None, slow_to_fast_callbacks=None):
+
+    def __init__(
+        self,
+        fast,
+        slow,
+        n,
+        weight=lambda k, v: 1,
+        fast_to_slow_callbacks=None,
+        slow_to_fast_callbacks=None,
+    ):
         self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
         self.slow = slow
         self.n = n
@@ -107,7 +115,7 @@ class Buffer(ZictBase):
         return key in self.fast or key in self.slow
 
     def __str__(self):
-        return 'Buffer<%s, %s>' % (str(self.fast), str(self.slow))
+        return "Buffer<%s, %s>" % (str(self.fast), str(self.slow))
 
     __repr__ = __str__
 

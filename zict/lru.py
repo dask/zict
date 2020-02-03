@@ -32,6 +32,7 @@ class LRU(ZictBase):
     >>> lru['z'] = 3
     Lost x 1
     """
+
     def __init__(self, n, d, on_evict=None, weight=lambda k, v: 1):
         self.d = d
         self.n = n
@@ -114,8 +115,8 @@ class LRU(ZictBase):
         return key in self.d
 
     def __str__(self):
-        sub = str(self.d) if not isinstance(self.d, dict) else 'dict'
-        return '<LRU: %s/%s on %s>' % (self.total_weight, self.n, sub)
+        sub = str(self.d) if not isinstance(self.d, dict) else "dict"
+        return "<LRU: %s/%s on %s>" % (self.total_weight, self.n, sub)
 
     __repr__ = __str__
 

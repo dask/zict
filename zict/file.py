@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+
 try:
     from urllib.parse import quote, unquote
 except ImportError:
@@ -14,7 +15,7 @@ def _safe_key(key):
     Escape key so as to be usable on all filesystems.
     """
     # Even directory separators are unsafe.
-    return quote(key, safe='')
+    return quote(key, safe="")
 
 
 def _unsafe_key(key):
@@ -54,7 +55,8 @@ class File(ZictBase):
 
     >>> z['data'] = np.ones(5).data  # doctest: +SKIP
     """
-    def __init__(self, directory, mode='a'):
+
+    def __init__(self, directory, mode="a"):
         self.directory = directory
         self.mode = mode
         self._keys = set()
@@ -65,18 +67,22 @@ class File(ZictBase):
                 self._keys.add(_unsafe_key(n))
 
     def __str__(self):
-        return '<File: %s, mode="%s", %d elements>' % (self.directory, self.mode, len(self))
+        return '<File: %s, mode="%s", %d elements>' % (
+            self.directory,
+            self.mode,
+            len(self),
+        )
 
     __repr__ = __str__
 
     def __getitem__(self, key):
         if key not in self._keys:
             raise KeyError(key)
-        with open(os.path.join(self.directory, _safe_key(key)), 'rb') as f:
+        with open(os.path.join(self.directory, _safe_key(key)), "rb") as f:
             return f.read()
 
     def __setitem__(self, key, value):
-        with open(os.path.join(self.directory, _safe_key(key)), 'wb') as f:
+        with open(os.path.join(self.directory, _safe_key(key)), "wb") as f:
             if isinstance(value, (tuple, list)):
                 for v in value:
                     f.write(v)

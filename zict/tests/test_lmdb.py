@@ -13,7 +13,7 @@ from . import utils_test
 
 @pytest.yield_fixture
 def fn():
-    dirname = tempfile.mkdtemp(prefix='test_lmdb-')
+    dirname = tempfile.mkdtemp(prefix="test_lmdb-")
     try:
         yield dirname
     finally:
@@ -35,11 +35,11 @@ def test_reuse(fn):
     """
     with LMDB(fn) as z:
         assert len(z) == 0
-        z['abc'] = b'123'
+        z["abc"] = b"123"
 
     with LMDB(fn) as z:
         assert len(z) == 1
-        assert z['abc'] == b'123'
+        assert z["abc"] == b"123"
 
 
 def test_creates_dir(fn):
@@ -48,7 +48,7 @@ def test_creates_dir(fn):
 
 
 def test_file_descriptors_dont_leak(fn):
-    psutil = pytest.importorskip('psutil')
+    psutil = pytest.importorskip("psutil")
     proc = psutil.Process()
     before = proc.num_fds()
 

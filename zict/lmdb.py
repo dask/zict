@@ -6,13 +6,16 @@ from .common import ZictBase
 
 
 if sys.version_info >= (3,):
+
     def _encode_key(key):
-        return key.encode('latin1')
+        return key.encode("latin1")
 
     def _decode_key(key):
-        return key.decode('latin1')
+        return key.decode("latin1")
+
 
 else:
+
     def _encode_key(key):
         return key
 
@@ -36,20 +39,19 @@ class LMDB(ZictBase):
     >>> z['x']  # doctest: +SKIP
     b'123'
     """
+
     def __init__(self, directory):
         import lmdb
+
         # map_size is the maximum database size but shouldn't fill up the
         # virtual address space
-        map_size = (1 << 40 if sys.maxsize >= 2**32 else 1 << 28)
+        map_size = 1 << 40 if sys.maxsize >= 2 ** 32 else 1 << 28
         # writemap requires sparse file support otherwise the whole
         # `map_size` may be reserved up front on disk
-        writemap = sys.platform.startswith('linux')
-        self.db = lmdb.open(directory,
-                            subdir=True,
-                            map_size=map_size,
-                            sync=False,
-                            writemap=writemap,
-                            )
+        writemap = sys.platform.startswith("linux")
+        self.db = lmdb.open(
+            directory, subdir=True, map_size=map_size, sync=False, writemap=writemap,
+        )
 
     def __getitem__(self, key):
         with self.db.begin() as txn:
@@ -68,13 +70,11 @@ class LMDB(ZictBase):
 
     def items(self):
         cursor = self.db.begin().cursor()
-        return ((_decode_key(k), v)
-                for k, v in cursor.iternext(keys=True, values=True))
+        return ((_decode_key(k), v) for k, v in cursor.iternext(keys=True, values=True))
 
     def keys(self):
         cursor = self.db.begin().cursor()
-        return (_decode_key(k)
-                for k in cursor.iternext(keys=True, values=False))
+        return (_decode_key(k) for k in cursor.iternext(keys=True, values=False))
 
     def values(self):
         cursor = self.db.begin().cursor()
@@ -96,7 +96,7 @@ class LMDB(ZictBase):
                 raise KeyError(key)
 
     def __len__(self):
-        return self.db.stat()['entries']
+        return self.db.stat()["entries"]
 
     def close(self):
         self.db.close()

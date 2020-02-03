@@ -23,20 +23,20 @@ def rotr(x):
 def test_simple():
     d = dict()
     f = Func(inc, dec, d)
-    f['x'] = 10
-    assert f['x'] == 10
-    assert d['x'] == 11
+    f["x"] = 10
+    assert f["x"] == 10
+    assert d["x"] == 11
 
-    assert 'x' in f
-    assert list(f) == ['x']
+    assert "x" in f
+    assert list(f) == ["x"]
     assert list(f.values()) == [10]
-    assert list(f.items()) == [('x', 10)]
+    assert list(f.items()) == [("x", 10)]
 
-    assert all(s in str(f) for s in ['inc', 'dec', 'x', 'Func'])
-    assert all(s in repr(f) for s in ['inc', 'dec', 'x', 'Func'])
+    assert all(s in str(f) for s in ["inc", "dec", "x", "Func"])
+    assert all(s in repr(f) for s in ["inc", "dec", "x", "Func"])
 
-    del f['x']
-    assert 'x' not in d
+    del f["x"]
+    assert "x" not in d
 
 
 def test_mapping():

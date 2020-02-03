@@ -32,6 +32,7 @@ class Sieve(ZictBase):
     --------
     Buffer
     """
+
     def __init__(self, mappings, selector):
         self.mappings = mappings
         self.selector = selector
@@ -89,7 +90,7 @@ class Sieve(ZictBase):
         return key in self.key_to_mapping
 
     def __str__(self):
-        return 'Sieve<%s>' % (str(self.mappings),)
+        return "Sieve<%s>" % (str(self.mappings),)
 
     __repr__ = __str__
 
