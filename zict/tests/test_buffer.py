@@ -63,7 +63,7 @@ def test_simple():
     assert buff['b'] == 1000
 
 
-def test_setkey_fastslow():
+def test_setitem_avoid_fast_slow_duplicate():
 
     a = dict()
     b = dict()
