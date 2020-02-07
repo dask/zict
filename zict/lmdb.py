@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function
 
 import os
 import sys
@@ -6,19 +5,11 @@ import sys
 from .common import ZictBase
 
 
-if sys.version_info >= (3,):
-    def _encode_key(key):
-        return key.encode('latin1')
+def _encode_key(key):
+    return key.encode('latin1')
 
-    def _decode_key(key):
-        return key.decode('latin1')
-
-else:
-    def _encode_key(key):
-        return key
-
-    def _decode_key(key):
-        return key
+def _decode_key(key):
+    return key.decode('latin1')
 
 
 class LMDB(ZictBase):

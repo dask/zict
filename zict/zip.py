@@ -1,10 +1,8 @@
-from __future__ import absolute_import, division, print_function
 
 try:
     from collections.abc import MutableMapping
 except ImportError:
     from collections import MutableMapping
-import sys
 import zipfile
 
 
@@ -43,7 +41,7 @@ class Zip(MutableMapping):
         return self.file.read(key)
 
     def __setitem__(self, key, value):
-        self.file.writestr(key, to_bytes(value))
+        self.file.writestr(key, value)
 
     def keys(self):
         return (zi.filename for zi in self.file.filelist)
@@ -77,12 +75,3 @@ class Zip(MutableMapping):
 
     def __exit__(self, type, value, traceback):
         self.close()
-
-
-if sys.version_info[0] == 2:
-    def to_bytes(x):
-        if isinstance(x, bytearray):
-            return bytes(x)
-        return x
-else:
-    to_bytes = lambda x: x
