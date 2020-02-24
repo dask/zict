@@ -22,6 +22,10 @@ class Buffer(ZictBase):
     slow_to_fast_callbacks: list of callables
         These functions run every time data moves form the slow to the fast
         mapping.
+    keep_slow: bool, optional
+        if true then we keep values in the slow dict rather than remove them.
+        This can improve performance for repeated storage, but takes up
+        more space.
 
     Examples
     --------
@@ -36,11 +40,13 @@ class Buffer(ZictBase):
     LRU
     """
     def __init__(self, fast, slow, n, weight=lambda k, v: 1,
-                 fast_to_slow_callbacks=None, slow_to_fast_callbacks=None):
+                 fast_to_slow_callbacks=None, slow_to_fast_callbacks=None,
+                 keep_slow=True):
         self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
         self.slow = slow
         self.n = n
         self.weight = weight
+        self.keep_slow = keep_slow
         if callable(fast_to_slow_callbacks):
             fast_to_slow_callbacks = [fast_to_slow_callbacks]
         if callable(slow_to_fast_callbacks):
@@ -49,6 +55,8 @@ class Buffer(ZictBase):
         self.slow_to_fast_callbacks = slow_to_fast_callbacks or []
 
     def fast_to_slow(self, key, value):
+        if self.keep_slow and key in self.slow:
+            return
         self.slow[key] = value
         for cb in self.fast_to_slow_callbacks:
             cb(key, value)
@@ -57,7 +65,8 @@ class Buffer(ZictBase):
         value = self.slow[key]
         # Avoid useless movement for heavy values
         if self.weight(key, value) <= self.n:
-            del self.slow[key]
+            if not self.keep_slow:
+                del self.slow[key]
             self.fast[key] = value
         for cb in self.slow_to_fast_callbacks:
             cb(key, value)
@@ -83,11 +92,14 @@ class Buffer(ZictBase):
             self.slow[key] = value
 
     def __delitem__(self, key):
+        removed = False
         if key in self.fast:
             del self.fast[key]
-        elif key in self.slow:
+            removed = True
+        if (not removed or self.keep_slow) and key in self.slow:
             del self.slow[key]
-        else:
+            removed = True
+        if not removed:
             raise KeyError(key)
 
     def keys(self):

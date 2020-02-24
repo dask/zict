@@ -6,7 +6,7 @@ from . import utils_test
 def test_simple():
     a = dict()
     b = dict()
-    buff = Buffer(a, b, n=10, weight=lambda k, v: v)
+    buff = Buffer(a, b, n=10, weight=lambda k, v: v, keep_slow=False)
 
     buff['x'] = 1
     buff['y'] = 2
@@ -133,3 +133,47 @@ def test_callbacks():
     buff['x']
     assert f2s == ['x', 'y']
     assert s2f == ['x']
+
+
+def test_keep_slow():
+    a = {}
+    b = {}
+    buff = Buffer(a, b, n=2, keep_slow=True)
+
+    buff['x'] = 1
+    buff['y'] = 2
+    buff['z'] = 3
+
+    assert a == {'y': 2, 'z': 3}
+    assert b == {'x': 1}
+
+    buff['x']
+
+    assert a == {'x': 1, 'z': 3}
+    assert b == {'x': 1, 'y': 2}
+
+    del buff['x']
+
+    assert a == {'z': 3}
+    assert b == {'y': 2}
+
+    buff['x'] = 1
+    buff['w'] = 4
+
+    assert a == {'x': 1, 'w': 4}
+    assert b == {'y': 2, 'z': 3}
+
+    buff['x'] = 10
+
+    assert a == {'x': 10, 'w': 4}
+    assert b == {'y': 2, 'z': 3}
+
+    buff['y']
+
+    assert a == {'x': 10, 'y': 2}
+    assert b == {'y': 2, 'z': 3, 'w': 4}
+
+    buff['y'] = 12
+
+    assert a == {'x': 10, 'y': 12}
+    assert b == {'z': 3, 'w': 4}
