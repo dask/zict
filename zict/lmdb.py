@@ -6,10 +6,10 @@ from .common import ZictBase
 
 
 def _encode_key(key):
-    return key.encode('latin1')
+    return key.encode('utf-8')
 
 def _decode_key(key):
-    return key.decode('latin1')
+    return key.decode('utf-8')
 
 
 class LMDB(ZictBase):
