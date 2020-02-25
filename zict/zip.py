@@ -1,4 +1,3 @@
-
 try:
     from collections.abc import MutableMapping
 except ImportError:
