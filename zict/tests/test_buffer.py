@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function
 
 from zict import Buffer
 from . import utils_test
@@ -61,6 +60,31 @@ def test_simple():
     assert set(buff.slow) == {"b"} | slow_keys
     assert "b" in buff
     assert buff["b"] == 1000
+
+
+def test_setitem_avoid_fast_slow_duplicate():
+
+    a = dict()
+    b = dict()
+    buff = Buffer(a, b, n=10, weight=lambda k, v: v)
+    for first, second in [
+        (1, 12),
+        (12, 1)
+    ]:
+        buff['a'] = first
+        assert buff['a'] == first
+        buff['a'] = second
+        assert buff['a'] == second
+
+        fast_keys = set(buff.fast)
+        slow_keys = set(buff.slow)
+        assert not (fast_keys & slow_keys)
+        assert fast_keys | slow_keys == set(buff)
+
+        del buff['a']
+        assert 'a' not in buff
+        assert 'a' not in a
+        assert 'a' not in b
 
 
 def test_mapping():

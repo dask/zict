@@ -1,11 +1,6 @@
-from __future__ import absolute_import, division, print_function
 
 import os
-
-try:
-    from urllib.parse import quote, unquote
-except ImportError:
-    from urllib import quote, unquote
+from urllib.parse import quote, unquote
 
 from .common import ZictBase
 
@@ -61,7 +56,7 @@ class File(ZictBase):
         self.mode = mode
         self._keys = set()
         if not os.path.exists(self.directory):
-            os.mkdir(self.directory)
+            os.makedirs(self.directory, exist_ok=True)
         else:
             for n in os.listdir(self.directory):
                 self._keys.add(_unsafe_key(n))
