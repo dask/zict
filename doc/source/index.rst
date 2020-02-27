@@ -52,3 +52,9 @@ API
    :members:
 .. autoclass:: zict.zip.Zip
    :members:
+
+
+Changelog
+---------
+
+Release notes can be found :doc:`here <changelog>`.
