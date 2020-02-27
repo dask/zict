@@ -1,4 +1,3 @@
-
 try:
     from collections.abc import Mapping, MutableMapping
 except ImportError:
@@ -13,13 +12,13 @@ class ZictBase(MutableMapping):
     def update(*args, **kwds):
         # Boilerplate for implementing an update() method
         if not args:
-            raise TypeError("descriptor 'update' of MutableMapping object "
-                            "needs an argument")
+            raise TypeError(
+                "descriptor 'update' of MutableMapping object " "needs an argument"
+            )
         self = args[0]
         args = args[1:]
         if len(args) > 1:
-            raise TypeError('update expected at most 1 arguments, got %d' %
-                            len(args))
+            raise TypeError("update expected at most 1 arguments, got %d" % len(args))
         items = []
         if args:
             other = args[0]

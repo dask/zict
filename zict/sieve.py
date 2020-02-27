@@ -1,7 +1,5 @@
-
 from collections import defaultdict
 from itertools import chain
-import sys
 
 from .common import ZictBase, close
 
@@ -32,6 +30,7 @@ class Sieve(ZictBase):
     --------
     Buffer
     """
+
     def __init__(self, mappings, selector):
         self.mappings = mappings
         self.selector = selector
@@ -54,7 +53,6 @@ class Sieve(ZictBase):
     def _do_update(self, items):
         # Optimized update() implementation issuing a single update()
         # call per underlying mapping.
-        to_delete = []
         updates = defaultdict(list)
         mapping_ids = dict((id(m), m) for m in self.mappings.values())
 
@@ -90,7 +88,7 @@ class Sieve(ZictBase):
         return key in self.key_to_mapping
 
     def __str__(self):
-        return 'Sieve<%s>' % (str(self.mappings),)
+        return "Sieve<%s>" % (str(self.mappings),)
 
     __repr__ = __str__
 

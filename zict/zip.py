@@ -1,4 +1,3 @@
-
 try:
     from collections.abc import MutableMapping
 except ImportError:
@@ -24,14 +23,15 @@ class Zip(MutableMapping):
     b'123'
     >>> z.flush()  # flush and write metadata to disk  # doctest: +SKIP
     """
-    def __init__(self, filename, mode='a'):
+
+    def __init__(self, filename, mode="a"):
         self.filename = filename
         self.mode = mode
         self._file = None
 
     @property
     def file(self):
-        if self.mode == 'closed':
+        if self.mode == "closed":
             raise IOError("File closed")
         if not self._file or not self._file.fp:
             self._file = zipfile.ZipFile(self.filename, mode=self.mode)
@@ -50,8 +50,7 @@ class Zip(MutableMapping):
         return map(self.file.read, self.keys())
 
     def items(self):
-        return ((zi.filename, self.file.read(zi.filename))
-                for zi in self.file.filelist)
+        return ((zi.filename, self.file.read(zi.filename)) for zi in self.file.filelist)
 
     def __iter__(self):
         return self.keys()
@@ -68,7 +67,7 @@ class Zip(MutableMapping):
 
     def close(self):
         self.flush()
-        self.mode = 'closed'
+        self.mode = "closed"
 
     def __enter__(self):
         return self

@@ -1,4 +1,3 @@
-
 from .common import ZictBase, close
 
 
@@ -29,6 +28,7 @@ class Func(ZictBase):
     >>> f['x']
     10.0
     """
+
     def __init__(self, dump, load, d):
         self.dump = dump
         self.load = load
@@ -65,9 +65,11 @@ class Func(ZictBase):
         return len(self.d)
 
     def __str__(self):
-        return '<Func: %s<->%s %s>' % (funcname(self.dump),
-                                       funcname(self.load),
-                                       str(self.d))
+        return "<Func: %s<->%s %s>" % (
+            funcname(self.dump),
+            funcname(self.load),
+            str(self.d),
+        )
 
     __repr__ = __str__
 
@@ -80,9 +82,9 @@ class Func(ZictBase):
 
 def funcname(func):
     """Get the name of a function."""
-    while hasattr(func, 'func'):
+    while hasattr(func, "func"):
         func = func.func
     try:
         return func.__name__
-    except:
+    except Exception:
         return str(func)
