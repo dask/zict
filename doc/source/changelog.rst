@@ -7,7 +7,7 @@ Changelog
 - Create ``CONTRIBUTING.md`` (:pr:`28`) `Jacob Tomlinson`_
 - Import ABC from ``collections.abc`` instead of ``collections`` for Python 3.9 compatibility (:pr:`31`) `Karthikeyan Singaravelan`_
 - Drop Python 2 / 3.5 and add Python 3.7 / 3.8 support (:pr:`34`) `James Bourbeau`_
-- Dup keys fast slow (:pr:`32`) `fjetter`_
+- Duplicate keys fast slow (:pr:`32`) `fjetter`_
 - Fix dask cuda worker's race condition failure (:pr:`33`) `Pradipta Ghosh`_
 - Changed default ``lmdb`` encoding to ``utf-8`` (:pr:`36`) `Alex Davies`_
 - Add code linting and style check (:pr:`35`) `James Bourbeau`_
