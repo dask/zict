@@ -1,8 +1,8 @@
 Changelog
 =========
 
-2.0.0 - 2020-02-27
--------------------
+2.0.0 - 2020-02-28
+------------------
 
 - Create ``CONTRIBUTING.md`` (:pr:`28`) `Jacob Tomlinson`_
 - Import ABC from ``collections.abc`` instead of ``collections`` for Python 3.9 compatibility (:pr:`31`) `Karthikeyan Singaravelan`_
