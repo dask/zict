@@ -5,7 +5,7 @@ from .lru import LRU
 
 
 class Buffer(ZictBase):
-    """ Buffer one dictionary on top of another
+    """Buffer one dictionary on top of another
 
     This creates a MutableMapping by combining two MutableMappings, one that
     feeds into the other when it overflows, based on an LRU mechanism.  When

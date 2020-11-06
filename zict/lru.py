@@ -8,7 +8,7 @@ def do_nothing(k, v):
 
 
 class LRU(ZictBase):
-    """ Evict Least Recently Used Elements
+    """Evict Least Recently Used Elements
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ class LRU(ZictBase):
             self.evict()
 
     def evict(self):
-        """ Evict least recently used key
+        """Evict least recently used key
 
         This is typically called from internal use, but can be externally
         triggered as well.

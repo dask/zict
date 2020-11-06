@@ -2,7 +2,7 @@ from .common import ZictBase, close
 
 
 class Func(ZictBase):
-    """ Buffer a MutableMapping with a pair of input/output functions
+    """Buffer a MutableMapping with a pair of input/output functions
 
     Parameters
     ----------

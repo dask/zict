@@ -20,7 +20,7 @@ def _unsafe_key(key):
 
 
 class File(ZictBase):
-    """ Mutable Mapping interface to a directory
+    """Mutable Mapping interface to a directory
 
     Keys must be strings, values must be bytes
 
