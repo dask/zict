@@ -6,7 +6,7 @@ import zipfile
 
 
 class Zip(MutableMapping):
-    """ Mutable Mapping interface to a Zip file
+    """Mutable Mapping interface to a Zip file
 
     Keys must be strings, values must be bytes
 

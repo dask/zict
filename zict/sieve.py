@@ -5,7 +5,7 @@ from .common import ZictBase, close
 
 
 class Sieve(ZictBase):
-    """ Store values in different mappings based on a selector's
+    """Store values in different mappings based on a selector's
     output.
 
     This creates a MutableMapping combining several underlying

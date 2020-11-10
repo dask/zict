@@ -12,7 +12,7 @@ def _decode_key(key):
 
 
 class LMDB(ZictBase):
-    """ Mutable Mapping interface to a LMDB database.
+    """Mutable Mapping interface to a LMDB database.
 
     Keys must be strings, values must be bytes
 
@@ -38,7 +38,11 @@ class LMDB(ZictBase):
         # `map_size` may be reserved up front on disk
         writemap = sys.platform.startswith("linux")
         self.db = lmdb.open(
-            directory, subdir=True, map_size=map_size, sync=False, writemap=writemap,
+            directory,
+            subdir=True,
+            map_size=map_size,
+            sync=False,
+            writemap=writemap,
         )
 
     def __getitem__(self, key):
