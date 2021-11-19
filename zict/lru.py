@@ -55,19 +55,24 @@ class LRU(ZictBase):
 
         weight = self.weight(key, value)
 
-        if weight <= self.n:
+        def set_():
             self.d[key] = value
             self.i += 1
             self.heap[key] = self.i
-
             self.weights[key] = weight
             self.total_weight += weight
-        else:
-            for cb in self.on_evict:
-                cb(key, value)
+            while self.total_weight > self.n:
+                self.evict()
 
-        while self.total_weight > self.n:
-            self.evict()
+        if weight <= self.n:
+            set_()
+        else:
+            try:
+                for cb in self.on_evict:
+                    cb(key, value)
+            except Exception:
+                set_()
+                raise
 
     def evict(self):
         """Evict least recently used key
@@ -82,11 +87,18 @@ class LRU(ZictBase):
         w: weight
         """
         k, priority = self.heap.popitem()
+        v = self.d.pop(k)
+
+        try:
+            for cb in self.on_evict:
+                cb(k, v)
+        except Exception:
+            self.heap[k] = priority
+            self.d[k] = v
+            raise
+
         weight = self.weights.pop(k)
         self.total_weight -= weight
-        v = self.d.pop(k)
-        for cb in self.on_evict:
-            cb(k, v)
         return k, v, weight
 
     def __delitem__(self, key):
