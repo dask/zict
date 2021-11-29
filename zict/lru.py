@@ -61,7 +61,7 @@ class LRU(ZictBase):
             self.heap[key] = self.i
             self.weights[key] = weight
             self.total_weight += weight
-            while self.total_weight > self.n:
+            while self.total_weight > self.n and len(self.d) > 1:
                 self.evict()
 
         if weight <= self.n:
@@ -88,7 +88,6 @@ class LRU(ZictBase):
         """
         k, priority = self.heap.popitem()
         v = self.d.pop(k)
-
         try:
             for cb in self.on_evict:
                 cb(k, v)

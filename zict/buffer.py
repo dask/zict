@@ -57,6 +57,8 @@ class Buffer(ZictBase):
         self.slow_to_fast_callbacks = slow_to_fast_callbacks or []
 
     def fast_to_slow(self, key, value):
+        print("Im here in BUFFER line 60")
+        print(f"{key= }\n")
         self.slow[key] = value
         for cb in self.fast_to_slow_callbacks:
             cb(key, value)
@@ -80,18 +82,9 @@ class Buffer(ZictBase):
             raise KeyError(key)
 
     def __setitem__(self, key, value):
-        # Avoid useless movement for heavy values
-        if self.weight(key, value) <= self.n:
-            if key in self.slow:
-                del self.slow[key]
-            self.fast[key] = value
-        else:
-            if key in self.fast:
-                del self.fast[key]
-            try:
-                self.slow[key] = value
-            except Exception:
-                self.fast[key] = value
+        if key in self.slow:
+            del self.slow[key]
+        self.fast[key] = value
 
     def __delitem__(self, key):
         if key in self.fast:
