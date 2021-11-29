@@ -1,4 +1,7 @@
+import pytest
+
 from zict import LRU
+
 from . import utils_test
 
 
@@ -86,6 +89,25 @@ def test_callbacks():
 
     assert L == [("x", 1)]
     assert count[0] == len(L)
+
+
+def test_cb_exception_keep_on_lru():
+    def cb(k, v):
+        raise Exception
+
+    L = list()
+    d = dict()
+    lru = LRU(2, d, on_evict=[lambda k, v: L.append((k, v)), cb])
+
+    lru["x"] = 1
+    lru["y"] = 2
+
+    with pytest.raises(Exception):
+        lru["z"] = 3
+
+    assert L == [("x", 1)]  # tried to evict and raised exception
+    assert lru.total_weight == 3
+    assert lru.weights == {"x": 1, "y": 1, "z": 1}
 
 
 def test_weight():
