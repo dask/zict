@@ -82,6 +82,9 @@ class Buffer(ZictBase):
     def __setitem__(self, key, value):
         if key in self.slow:
             del self.slow[key]
+        # This may trigger an eviction from fast to slow of older keys.
+        # If the weight is individually greater than n, then key/value will be stored
+        # into self.slow instead (see LRU.__setitem__).
         self.fast[key] = value
 
     def __delitem__(self, key):
