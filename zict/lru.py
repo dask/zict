@@ -61,6 +61,10 @@ class LRU(ZictBase):
             self.heap[key] = self.i
             self.weights[key] = weight
             self.total_weight += weight
+            # Evicting the last key/value pair is guaranteed to fail, so don't try.
+            # This is because it is always the last one inserted by virtue of this
+            # being an LRU, which in turn means we reached this point because
+            # weight > self.n and a callbacks raised exception (e.g. disk full).
             while self.total_weight > self.n and len(self.d) > 1:
                 self.evict()
 
