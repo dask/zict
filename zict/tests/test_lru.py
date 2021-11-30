@@ -98,9 +98,14 @@ def test_cb_exception_keep_on_lru():
     def cb(k, v):
         raise MyError
 
-    L = list()
-    d = dict()
-    lru = LRU(2, d, on_evict=[lambda k, v: L.append((k, v)), cb])
+    a = []
+    b = []
+    d = {}
+    lru = LRU(2, d, on_evict=[
+        lambda k, v: a.append((k, v)), 
+        cb,
+        lambda k, v: b.append((k, v)),
+    ])
 
     lru["x"] = 1
     lru["y"] = 2
