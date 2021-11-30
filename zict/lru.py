@@ -96,6 +96,7 @@ class LRU(ZictBase):
             for cb in self.on_evict:
                 cb(k, v)
         except Exception:
+            # e.g. if a callback tried storing to disk and raised a disk full error
             self.heap[k] = priority
             self.d[k] = v
             raise
