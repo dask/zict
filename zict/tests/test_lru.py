@@ -108,7 +108,10 @@ def test_cb_exception_keep_on_lru():
     with pytest.raises(MyError):
         lru["z"] = 3
 
-    assert L == [("x", 1)]  # tried to evict and raised exception
+    # exception was raised in a later callback
+    assert a == [("x", 1)]
+    # tried to evict and raised exception
+    assert b == []
     assert lru.total_weight == 3
     assert lru.weights == {"x": 1, "y": 1, "z": 1}
 
