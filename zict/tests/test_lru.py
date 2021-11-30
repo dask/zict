@@ -92,8 +92,11 @@ def test_callbacks():
 
 
 def test_cb_exception_keep_on_lru():
+    class MyError(Exception):
+        pass
+        
     def cb(k, v):
-        raise Exception
+        raise MyError
 
     L = list()
     d = dict()
