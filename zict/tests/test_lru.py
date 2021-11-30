@@ -105,7 +105,7 @@ def test_cb_exception_keep_on_lru():
     lru["x"] = 1
     lru["y"] = 2
 
-    with pytest.raises(Exception):
+    with pytest.raises(MyError):
         lru["z"] = 3
 
     assert L == [("x", 1)]  # tried to evict and raised exception
