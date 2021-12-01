@@ -94,18 +94,22 @@ def test_callbacks():
 def test_cb_exception_keep_on_lru():
     class MyError(Exception):
         pass
-        
+
     def cb(k, v):
         raise MyError
 
     a = []
     b = []
     d = {}
-    lru = LRU(2, d, on_evict=[
-        lambda k, v: a.append((k, v)), 
-        cb,
-        lambda k, v: b.append((k, v)),
-    ])
+    lru = LRU(
+        2,
+        d,
+        on_evict=[
+            lambda k, v: a.append((k, v)),
+            cb,
+            lambda k, v: b.append((k, v)),
+        ],
+    )
 
     lru["x"] = 1
     lru["y"] = 2
@@ -119,6 +123,56 @@ def test_cb_exception_keep_on_lru():
     assert b == []
     assert lru.total_weight == 3
     assert lru.weights == {"x": 1, "y": 1, "z": 1}
+
+    assert set(lru) == {"x", "y", "z"}
+
+    assert "x" in lru.d
+    assert "y" in lru.d
+    assert "z" in lru.d
+
+    assert "x" in lru.heap and lru.heap["x"] == 1
+    assert "y" in lru.heap and lru.heap["y"] == 2
+    assert "z" in lru.heap and lru.heap["z"] == 3
+
+
+def test_cb_exception_keep_on_lru_weights():
+    class MyError(Exception):
+        pass
+
+    def cb(k, v):
+        raise MyError
+
+    a = []
+    b = []
+    d = {}
+    lru = LRU(
+        2,
+        d,
+        on_evict=[
+            lambda k, v: a.append((k, v)),
+            cb,
+            lambda k, v: b.append((k, v)),
+        ],
+        weight=lambda k, v: v,
+    )
+
+    lru["x"] = 1
+
+    with pytest.raises(MyError):
+        lru["y"] = 3
+
+    # exception was raised in a later callback
+    assert a == [("y", 3), ("x", 1)]
+    # tried to evict and raised exception
+    assert b == []
+    assert lru.total_weight == 4
+    assert set(lru) == {"x", "y"}
+
+    assert "x" in lru.d
+    assert "y" in lru.d
+
+    assert "x" in lru.heap and lru.heap["x"] == 1
+    assert "y" in lru.heap and lru.heap["y"] == 2
 
 
 def test_weight():
