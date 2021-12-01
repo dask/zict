@@ -75,6 +75,7 @@ class LRU(ZictBase):
                 for cb in self.on_evict:
                     cb(key, value)
             except Exception:
+                # e.g. if a callback tried storing to disk and raised a disk full error
                 set_()
                 raise
 

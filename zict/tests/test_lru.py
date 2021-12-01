@@ -126,13 +126,8 @@ def test_cb_exception_keep_on_lru():
 
     assert set(lru) == {"x", "y", "z"}
 
-    assert "x" in lru.d
-    assert "y" in lru.d
-    assert "z" in lru.d
-
-    assert "x" in lru.heap and lru.heap["x"] == 1
-    assert "y" in lru.heap and lru.heap["y"] == 2
-    assert "z" in lru.heap and lru.heap["z"] == 3
+    assert lru.d == {"x": 1, "y": 2, "z": 3}
+    assert dict(lru.heap) == {"x": 1, "y": 2, "z": 3}
 
 
 def test_cb_exception_keep_on_lru_weights():
@@ -168,11 +163,8 @@ def test_cb_exception_keep_on_lru_weights():
     assert lru.total_weight == 4
     assert set(lru) == {"x", "y"}
 
-    assert "x" in lru.d
-    assert "y" in lru.d
-
-    assert "x" in lru.heap and lru.heap["x"] == 1
-    assert "y" in lru.heap and lru.heap["y"] == 2
+    assert lru.d == {"x": 1, "y": 3}
+    assert dict(lru.heap) == {"x": 1, "y": 2}
 
 
 def test_weight():
