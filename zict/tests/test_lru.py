@@ -160,13 +160,32 @@ def test_cb_exception_keep_on_lru_weights():
 
     # exception was raised in a later callback
     assert a == [("y", 3), ("x", 1)]
-    # tried to evict and raised exception
-    assert b == []
-    assert lru.total_weight == 4
-    assert set(lru) == {"x", "y"}
+    # tried to to evict x and succeeded
+    assert b == [("x", 1)]
+    assert lru.total_weight == 3
+    assert set(lru) == {"y"}
 
-    assert lru.d == {"x": 1, "y": 3}
-    assert dict(lru.heap) == {"x": 1, "y": 2}
+    assert lru.d == {"y": 3}
+    assert dict(lru.heap) == {"y": 2}
+
+    with pytest.raises(MyError):
+        # value is individually heavier than n
+        lru["z"] = 4
+
+    # exception was raised in a later callback
+    assert a == [
+        ("y", 3),
+        ("x", 1),
+        ("z", 4),
+        ("y", 3),
+    ]  # try to evict z and then y again
+    # tried to evict and raised exception
+    assert b == [("x", 1)]
+    assert lru.total_weight == 7
+    assert set(lru) == {"y", "z"}
+
+    assert lru.d == {"y": 3, "z": 4}
+    assert dict(lru.heap) == {"y": 2, "z": 3}
 
 
 def test_weight():
