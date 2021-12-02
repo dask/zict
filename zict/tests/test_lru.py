@@ -135,7 +135,8 @@ def test_cb_exception_keep_on_lru_weights():
         pass
 
     def cb(k, v):
-        raise MyError
+        if v >= 3:
+            raise MyError()
 
     a = []
     b = []
@@ -154,6 +155,7 @@ def test_cb_exception_keep_on_lru_weights():
     lru["x"] = 1
 
     with pytest.raises(MyError):
+        # value is individually heavier than n
         lru["y"] = 3
 
     # exception was raised in a later callback
