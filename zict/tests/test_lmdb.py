@@ -9,7 +9,7 @@ from zict.lmdb import LMDB
 from . import utils_test
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def fn():
     dirname = tempfile.mkdtemp(prefix="test_lmdb-")
     try:
