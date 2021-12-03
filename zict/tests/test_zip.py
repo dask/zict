@@ -11,7 +11,7 @@ import pytest
 from zict import Zip
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def fn():
     filename = ".tmp.zip"
     if os.path.exists(filename):

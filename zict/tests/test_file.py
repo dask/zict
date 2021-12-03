@@ -7,7 +7,7 @@ from zict.file import File
 from . import utils_test
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def fn():
     filename = ".tmp"
     if os.path.exists(filename):
