@@ -58,8 +58,13 @@ class Buffer(ZictBase):
 
     def fast_to_slow(self, key, value):
         self.slow[key] = value
-        for cb in self.fast_to_slow_callbacks:
-            cb(key, value)
+        try:
+            for cb in self.fast_to_slow_callbacks:
+                cb(key, value)
+        # LRU catches exception, raises and makes sure keys are not lost and located in fast.
+        except Exception:
+            del self.slow[key]
+            raise
 
     def slow_to_fast(self, key):
         value = self.slow[key]
