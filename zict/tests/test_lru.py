@@ -96,7 +96,7 @@ def test_cb_exception_keep_on_lru():
         pass
 
     def cb(k, v):
-        raise MyError
+        raise MyError()
 
     a = []
     b = []
