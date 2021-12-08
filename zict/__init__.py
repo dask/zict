@@ -6,5 +6,4 @@ from .lru import LRU
 from .sieve import Sieve
 from .zip import Zip
 
-# Fix this before mergin. Used to test distributed
-__version__ = "2.0.1"
+__version__ = "2.0.0.dev1"
