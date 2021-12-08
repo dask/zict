@@ -186,7 +186,7 @@ def test_callbacks_exception_catch():
     assert a == {"y": 2, "z": 8}
     assert b == {"x": 1}
 
-    # Add key > n, again total weight > n this will move everuthing to slow except w
+    # Add key > n, again total weight > n this will move everything to slow except w
     # that stays in fast due after callback raise
     with pytest.raises(MyError):
         buff["w"] = 11
