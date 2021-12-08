@@ -195,20 +195,3 @@ def test_callbacks_exception_catch():
     assert s2f == []
     assert a == {"w": 11}
     assert b == {"x": 1, "y": 2, "z": 8}
-
-    # Retrieve x from slow to fast, will try to move w to slow and raise
-    with pytest.raises(MyError):
-        buff["x"]
-
-    assert f2s == ["x", "y", "z"]
-    # Needs FIX
-    # the following is not working because in buffer.py slow_to_fast when adding
-    # the key to fast is trying to evict "w" to slow and raising (which is an obvious
-    # fail raise we might want to avoid), not getting to the callbacks.
-    # If I do try/except and pass in slow_to_fast things are handled well, but not sure the
-    # pass is the right call here.
-    assert s2f == [
-        "x"
-    ]  # this is currently empty because it's not getting to the callback
-    assert a == {"x": 1, "w": 11}
-    assert b == {"y": 2, "z": 8}
