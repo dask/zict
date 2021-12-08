@@ -157,8 +157,8 @@ def test_callbacks_exception_catch():
     def s2f_cb(k, v):
         s2f.append(k)
 
-    a = dict()
-    b = dict()
+    a = {}
+    b = {}
     buff = zict.Buffer(
         a,
         b,
