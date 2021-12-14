@@ -8,7 +8,9 @@ def do_nothing(k, v):
 
 
 class LRU(ZictBase):
-    """Evict Least Recently Used Elements
+    """Evict Least Recently Used Elements. If an exception occurs during an eviction
+    (e.g a callback tried storing to disk and raised a disk full error) the key will
+    remain on the LRU.
 
     Parameters
     ----------
