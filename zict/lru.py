@@ -8,9 +8,7 @@ def do_nothing(k, v):
 
 
 class LRU(ZictBase):
-    """Evict Least Recently Used Elements. If an exception occurs during an eviction
-    (e.g a callback tried storing to disk and raised a disk full error) the key will
-    remain on the LRU.
+    """Evict Least Recently Used Elements.
 
     Parameters
     ----------
@@ -20,6 +18,8 @@ class LRU(ZictBase):
         Dictionary in which to hold elements
     on_evict: list of callables
         Function:: k, v -> action to call on key value pairs prior to eviction
+        If an exception occurs during an on_evict callback (e.g a callback tried
+        storing to disk and raised a disk full error) the key will remain in the LRU.
     weight: callable
         Function:: k, v -> number to determine the size of keeping the item in
         the mapping.  Defaults to ``(k, v) -> 1``

@@ -9,9 +9,7 @@ class Buffer(ZictBase):
 
     This creates a MutableMapping by combining two MutableMappings, one that
     feeds into the other when it overflows, based on an LRU mechanism.  When
-    the first evicts elements these get placed into the second. If an exception
-    occurs during this eviction (e.g a callback tried storing to disk and raised
-    a disk full error), the key will remain on the first (LRU). When an item
+    the first evicts elements these get placed into the second. When an item
     is retrieved from the second it is placed back into the first.
 
     Parameters
@@ -21,6 +19,8 @@ class Buffer(ZictBase):
     fast_to_slow_callbacks: list of callables
         These functions run every time data moves from the fast to the slow
         mapping.  They take two arguments, a key and a value
+        If an exception occurs during a fast_to_slow_callbacks (e.g a callback tried
+        storing to disk and raised a disk full error) the key will remain in the LRU.
     slow_to_fast_callbacks: list of callables
         These functions run every time data moves form the slow to the fast
         mapping.
