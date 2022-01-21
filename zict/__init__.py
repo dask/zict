@@ -6,4 +6,4 @@ from .lru import LRU
 from .sieve import Sieve
 from .zip import Zip
 
-__version__ = "2.0.0.dev1"
+__version__ = "2.1.0.dev1"
