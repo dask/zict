@@ -72,16 +72,18 @@ class File(ZictBase):
     def __getitem__(self, key):
         if key not in self._keys:
             raise KeyError(key)
-        with open(os.path.join(self.directory, _safe_key(key)), "rb") as f:
-            return f.read()
+        fn = os.path.join(self.directory, _safe_key(key))
+        with open(fn, "rb") as fh:
+            return fh.read()
 
     def __setitem__(self, key, value):
-        with open(os.path.join(self.directory, _safe_key(key)), "wb") as f:
+        fn = os.path.join(self.directory, _safe_key(key))
+        with open(fn, "wb") as fh:
             if isinstance(value, (tuple, list)):
                 for v in value:
-                    f.write(v)
+                    fh.write(v)
             else:
-                f.write(value)
+                fh.write(value)
         self._keys.add(key)
 
     def __contains__(self, key):
