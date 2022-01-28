@@ -39,6 +39,17 @@ def test_implementation(fn):
     assert "x" in z
 
 
+def test_memmap_implementation(fn):
+    z = File(fn, memmap=True)
+    assert not z
+
+    z["x"] = b"123"
+    assert os.listdir(fn) == ["x"]
+    assert z["x"] == memoryview(b"123")
+
+    assert "x" in z
+
+
 def test_str(fn):
     z = File(fn)
     assert fn in str(z)
