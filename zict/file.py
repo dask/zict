@@ -80,8 +80,7 @@ class File(ZictBase):
         fn = os.path.join(self.directory, _safe_key(key))
         with open(fn, "wb") as fh:
             if isinstance(value, (tuple, list)):
-                for v in value:
-                    fh.write(v)
+                fh.writelines(value)
             else:
                 fh.write(value)
         self._keys.add(key)
