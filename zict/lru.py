@@ -8,7 +8,7 @@ def do_nothing(k, v):
 
 
 class LRU(ZictBase):
-    """Evict Least Recently Used Elements
+    """Evict Least Recently Used Elements.
 
     Parameters
     ----------
@@ -18,6 +18,8 @@ class LRU(ZictBase):
         Dictionary in which to hold elements
     on_evict: list of callables
         Function:: k, v -> action to call on key value pairs prior to eviction
+        If an exception occurs during an on_evict callback (e.g a callback tried
+        storing to disk and raised a disk full error) the key will remain in the LRU.
     weight: callable
         Function:: k, v -> number to determine the size of keeping the item in
         the mapping.  Defaults to ``(k, v) -> 1``
@@ -55,19 +57,29 @@ class LRU(ZictBase):
 
         weight = self.weight(key, value)
 
-        if weight <= self.n:
+        def set_():
             self.d[key] = value
             self.i += 1
             self.heap[key] = self.i
-
             self.weights[key] = weight
             self.total_weight += weight
-        else:
-            for cb in self.on_evict:
-                cb(key, value)
+            # Evicting the last key/value pair is guaranteed to fail, so don't try.
+            # This is because it is always the last one inserted by virtue of this
+            # being an LRU, which in turn means we reached this point because
+            # weight > self.n and a callbacks raised exception (e.g. disk full).
+            while self.total_weight > self.n and len(self.d) > 1:
+                self.evict()
 
-        while self.total_weight > self.n:
-            self.evict()
+        if weight <= self.n:
+            set_()
+        else:
+            try:
+                for cb in self.on_evict:
+                    cb(key, value)
+            except Exception:
+                # e.g. if a callback tried storing to disk and raised a disk full error
+                set_()
+                raise
 
     def evict(self):
         """Evict least recently used key
@@ -82,11 +94,18 @@ class LRU(ZictBase):
         w: weight
         """
         k, priority = self.heap.popitem()
+        v = self.d.pop(k)
+        try:
+            for cb in self.on_evict:
+                cb(k, v)
+        except Exception:
+            # e.g. if a callback tried storing to disk and raised a disk full error
+            self.heap[k] = priority
+            self.d[k] = v
+            raise
+
         weight = self.weights.pop(k)
         self.total_weight -= weight
-        v = self.d.pop(k)
-        for cb in self.on_evict:
-            cb(k, v)
         return k, v, weight
 
     def __delitem__(self, key):

@@ -9,7 +9,7 @@ class Buffer(ZictBase):
 
     This creates a MutableMapping by combining two MutableMappings, one that
     feeds into the other when it overflows, based on an LRU mechanism.  When
-    the first evicts elements these get placed into the second.  When an item
+    the first evicts elements these get placed into the second. When an item
     is retrieved from the second it is placed back into the first.
 
     Parameters
@@ -19,6 +19,8 @@ class Buffer(ZictBase):
     fast_to_slow_callbacks: list of callables
         These functions run every time data moves from the fast to the slow
         mapping.  They take two arguments, a key and a value
+        If an exception occurs during a fast_to_slow_callbacks (e.g a callback tried
+        storing to disk and raised a disk full error) the key will remain in the LRU.
     slow_to_fast_callbacks: list of callables
         These functions run every time data moves form the slow to the fast
         mapping.
@@ -58,8 +60,13 @@ class Buffer(ZictBase):
 
     def fast_to_slow(self, key, value):
         self.slow[key] = value
-        for cb in self.fast_to_slow_callbacks:
-            cb(key, value)
+        try:
+            for cb in self.fast_to_slow_callbacks:
+                cb(key, value)
+        # LRU catches exception, raises and makes sure keys are not lost and located in fast.
+        except Exception:
+            del self.slow[key]
+            raise
 
     def slow_to_fast(self, key):
         value = self.slow[key]
@@ -80,15 +87,12 @@ class Buffer(ZictBase):
             raise KeyError(key)
 
     def __setitem__(self, key, value):
-        # Avoid useless movement for heavy values
-        if self.weight(key, value) <= self.n:
-            if key in self.slow:
-                del self.slow[key]
-            self.fast[key] = value
-        else:
-            if key in self.fast:
-                del self.fast[key]
-            self.slow[key] = value
+        if key in self.slow:
+            del self.slow[key]
+        # This may trigger an eviction from fast to slow of older keys.
+        # If the weight is individually greater than n, then key/value will be stored
+        # into self.slow instead (see LRU.__setitem__).
+        self.fast[key] = value
 
     def __delitem__(self, key):
         if key in self.fast:

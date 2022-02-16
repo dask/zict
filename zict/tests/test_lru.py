@@ -1,4 +1,7 @@
+import pytest
+
 from zict import LRU
+
 from . import utils_test
 
 
@@ -86,6 +89,103 @@ def test_callbacks():
 
     assert L == [("x", 1)]
     assert count[0] == len(L)
+
+
+def test_cb_exception_keep_on_lru():
+    class MyError(Exception):
+        pass
+
+    def cb(k, v):
+        raise MyError()
+
+    a = []
+    b = []
+    d = {}
+    lru = LRU(
+        2,
+        d,
+        on_evict=[
+            lambda k, v: a.append((k, v)),
+            cb,
+            lambda k, v: b.append((k, v)),
+        ],
+    )
+
+    lru["x"] = 1
+    lru["y"] = 2
+
+    with pytest.raises(MyError):
+        lru["z"] = 3
+
+    # exception was raised in a later callback
+    assert a == [("x", 1)]
+    # tried to evict and raised exception
+    assert b == []
+    assert lru.total_weight == 3
+    assert lru.weights == {"x": 1, "y": 1, "z": 1}
+
+    assert set(lru) == {"x", "y", "z"}
+
+    assert lru.d == {"x": 1, "y": 2, "z": 3}
+    assert dict(lru.heap) == {"x": 1, "y": 2, "z": 3}
+
+
+def test_cb_exception_keep_on_lru_weights():
+    class MyError(Exception):
+        pass
+
+    def cb(k, v):
+        if v >= 3:
+            raise MyError()
+
+    a = []
+    b = []
+    d = {}
+    lru = LRU(
+        2,
+        d,
+        on_evict=[
+            lambda k, v: a.append((k, v)),
+            cb,
+            lambda k, v: b.append((k, v)),
+        ],
+        weight=lambda k, v: v,
+    )
+
+    lru["x"] = 1
+
+    with pytest.raises(MyError):
+        # value is individually heavier than n
+        lru["y"] = 3
+
+    # exception was raised in a later callback
+    assert a == [("y", 3), ("x", 1)]
+    # tried to to evict x and succeeded
+    assert b == [("x", 1)]
+    assert lru.total_weight == 3
+    assert set(lru) == {"y"}
+
+    assert lru.d == {"y": 3}
+    assert dict(lru.heap) == {"y": 2}
+
+    with pytest.raises(MyError):
+        # value is individually heavier than n
+        lru["z"] = 4
+
+    # exception was raised in a later callback
+    assert a == [
+        ("y", 3),
+        ("x", 1),
+        ("z", 4),
+        ("y", 3),
+    ]  # try to evict z and then y again
+    # tried to evict and raised exception
+    assert b == [("x", 1)]
+    assert lru.total_weight == 7
+    assert set(lru) == {"y", "z"}
+
+    assert lru.d == {"y": 3, "z": 4}
+    assert dict(lru.heap) == {"y": 2, "z": 3}
 
 
 def test_weight():

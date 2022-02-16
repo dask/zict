@@ -1,9 +1,9 @@
-from .zip import Zip
+from .buffer import Buffer
 from .file import File
 from .func import Func
-from .lru import LRU
-from .buffer import Buffer
-from .sieve import Sieve
 from .lmdb import LMDB
+from .lru import LRU
+from .sieve import Sieve
+from .zip import Zip
 
-__version__ = "2.0.0"
+__version__ = "2.1.0.dev1"
