@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name="zict",
-    version="2.1.0.dev1",
+    version="2.1.0.dev2",
     description="Mutable mapping tools",
     url="http://zict.readthedocs.io/en/latest/",
     maintainer="Matthew Rocklin",
@@ -20,9 +20,10 @@ setup(
     ),
     classifiers=[
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     zip_safe=False,
 )

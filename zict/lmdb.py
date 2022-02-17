@@ -33,7 +33,7 @@ class LMDB(ZictBase):
 
         # map_size is the maximum database size but shouldn't fill up the
         # virtual address space
-        map_size = 1 << 40 if sys.maxsize >= 2 ** 32 else 1 << 28
+        map_size = 1 << 40 if sys.maxsize >= 2**32 else 1 << 28
         # writemap requires sparse file support otherwise the whole
         # `map_size` may be reserved up front on disk
         writemap = sys.platform.startswith("linux")

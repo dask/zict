@@ -11,15 +11,15 @@ import pytest
 
 def generate_random_strings(n, min_len, max_len):
     r = random.Random(42)
-    l = []
+    out = []
     chars = string.ascii_lowercase + string.digits
 
     for i in range(n):
         nchars = r.randint(min_len, max_len)
         s = "".join(r.choice(chars) for _ in range(nchars))
-        l.append(s)
+        out.append(s)
 
-    return l
+    return out
 
 
 def to_bytestring(s):
