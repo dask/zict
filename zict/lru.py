@@ -133,7 +133,7 @@ class LRU(ZictBase):
 
     def __str__(self):
         sub = str(self.d) if not isinstance(self.d, dict) else "dict"
-        return "<LRU: %s/%s on %s>" % (self.total_weight, self.n, sub)
+        return f"<LRU: {self.total_weight}/{self.n} on {sub}>"
 
     __repr__ = __str__
 

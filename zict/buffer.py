@@ -121,7 +121,7 @@ class Buffer(ZictBase):
         return key in self.fast or key in self.slow
 
     def __str__(self):
-        return "Buffer<%s, %s>" % (str(self.fast), str(self.slow))
+        return f"Buffer<{self.fast}, {self.slow}>"
 
     __repr__ = __str__
 

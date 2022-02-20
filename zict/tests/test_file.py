@@ -4,6 +4,7 @@ import shutil
 import pytest
 
 from zict.file import File
+
 from . import utils_test
 
 

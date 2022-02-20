@@ -32,7 +32,7 @@ class Zip(MutableMapping):
     @property
     def file(self):
         if self.mode == "closed":
-            raise IOError("File closed")
+            raise OSError("File closed")
         if not self._file or not self._file.fp:
             self._file = zipfile.ZipFile(self.filename, mode=self.mode)
         return self._file
