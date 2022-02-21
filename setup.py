@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name="zict",
-    version="2.1.0.dev2",
+    version="2.1.0.dev3",
     description="Mutable mapping tools",
     url="http://zict.readthedocs.io/en/latest/",
     maintainer="Matthew Rocklin",

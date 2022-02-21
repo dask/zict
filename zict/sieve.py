@@ -54,7 +54,7 @@ class Sieve(ZictBase):
         # Optimized update() implementation issuing a single update()
         # call per underlying mapping.
         updates = defaultdict(list)
-        mapping_ids = dict((id(m), m) for m in self.mappings.values())
+        mapping_ids = {id(m): m for m in self.mappings.values()}
 
         for key, value in items:
             old_mapping = self.key_to_mapping.get(key)
@@ -88,7 +88,7 @@ class Sieve(ZictBase):
         return key in self.key_to_mapping
 
     def __str__(self):
-        return "Sieve<%s>" % (str(self.mappings),)
+        return f"Sieve<{self.mappings}>"
 
     __repr__ = __str__
 

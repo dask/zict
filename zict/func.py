@@ -65,11 +65,7 @@ class Func(ZictBase):
         return len(self.d)
 
     def __str__(self):
-        return "<Func: %s<->%s %s>" % (
-            funcname(self.dump),
-            funcname(self.load),
-            str(self.d),
-        )
+        return f"<Func: {funcname(self.dump)}<->{funcname(self.load)} {self.d}>"
 
     __repr__ = __str__
 
