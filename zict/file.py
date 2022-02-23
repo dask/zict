@@ -1,4 +1,5 @@
 import os
+import mmap
 from urllib.parse import quote, unquote
 
 from .common import ZictBase
@@ -50,9 +51,10 @@ class File(ZictBase):
     >>> z['data'] = np.ones(5).data  # doctest: +SKIP
     """
 
-    def __init__(self, directory, mode="a"):
+    def __init__(self, directory, mode="a", memmap=False):
         self.directory = directory
         self.mode = mode
+        self.memmap = memmap
         self._keys = set()
         if not os.path.exists(self.directory):
             os.makedirs(self.directory, exist_ok=True)
@@ -72,16 +74,20 @@ class File(ZictBase):
     def __getitem__(self, key):
         if key not in self._keys:
             raise KeyError(key)
-        with open(os.path.join(self.directory, _safe_key(key)), "rb") as f:
-            return f.read()
+        fn = os.path.join(self.directory, _safe_key(key))
+        with open(fn, "rb") as fh:
+            if self.memmap:
+                return memoryview(mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ))
+            else:
+                return fh.read()
 
     def __setitem__(self, key, value):
-        with open(os.path.join(self.directory, _safe_key(key)), "wb") as f:
+        fn = os.path.join(self.directory, _safe_key(key))
+        with open(fn, "wb") as fh:
             if isinstance(value, (tuple, list)):
-                for v in value:
-                    f.write(v)
+                fh.writelines(value)
             else:
-                f.write(value)
+                fh.write(value)
         self._keys.add(key)
 
     def __contains__(self, key):
