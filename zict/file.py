@@ -1,5 +1,5 @@
-import os
 import mmap
+import os
 from urllib.parse import quote, unquote
 
 from .common import ZictBase
