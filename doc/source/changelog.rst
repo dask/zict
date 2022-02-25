@@ -1,12 +1,14 @@
 Changelog
 =========
 
-2.1.0 - Unreleased
+2.1.0 - 2022-02-25
 ------------------
 - LRU and Buffer now deal with exceptions raised by the callbacks - namely, OSError
-  raised when the disk is full (:pr`48`) `Naty Clementi`_, `Guido Imperiale`_
+  raised when the disk is full (:pr:`48`) `Naty Clementi`_, `Guido Imperiale`_
 - Dropped support for Python 3.6; added support for Python 3.9 and 3.10 (:pr:`55`)
   `Guido Imperiale`_
+- Migrate to GitHub actions (:pr:`40`) `Thomas J. Fan`_
+- Allow file mmaping (:pr:`51`) `jakirkham`_
 
 
 2.0.0 - 2020-02-28
@@ -29,3 +31,5 @@ Changelog
 .. _`Alex Davies`: https://github.com/traverseda
 .. _`Naty Clementi`: https://github.com/ncclementi
 .. _`Guido Imperiale`: https://github.com/crusaderky
+.. _`Thomas J. Fan`: https://github.com/thomasjpfan
+.. _`jakirkham`: https://github.com/jakirkham
