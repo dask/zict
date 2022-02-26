@@ -14,6 +14,7 @@ setup(
     license="BSD",
     keywords="mutable mapping,dict,dask",
     packages=["zict"],
+    python_requires=">=3.7",
     install_requires=open("requirements.txt").read().strip().split("\n"),
     long_description=(
         open("README.rst").read() if os.path.exists("README.rst") else ""
