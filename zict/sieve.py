@@ -101,7 +101,7 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
         return sum(map(len, self.mappings.values()))
 
     def __iter__(self) -> Iterator[KT]:
-        return iter(self.keys())
+        return self.keys()
 
     def __contains__(self, key: object) -> bool:
         return key in self.key_to_mapping

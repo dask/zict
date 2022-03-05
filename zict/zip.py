@@ -62,7 +62,7 @@ class Zip(MutableMapping[str, bytes]):
         return ((zi.filename, self.file.read(zi.filename)) for zi in self.file.filelist)
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self.keys())
+        return self.keys()
 
     def __delitem__(self, key: str) -> None:
         raise NotImplementedError("Not supported by stdlib zipfile")

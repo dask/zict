@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from collections import Iterable, Iterator
+from collections.abc import Iterable, Iterator
 
 from .common import ZictBase
 
@@ -86,7 +86,7 @@ class LMDB(ZictBase[str, bytes]):
             assert consumed == added == len(items_enc)
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self.keys())
+        return self.keys()
 
     def __delitem__(self, key: str) -> None:
         with self.db.begin(write=True) as txn:
