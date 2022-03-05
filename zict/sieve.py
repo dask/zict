@@ -87,13 +87,14 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
             for key, _ in mitems:
                 self.key_to_mapping[key] = mapping
 
-    def keys(self) -> Iterator[KT]:
+    # FIXME dictionary views https://github.com/dask/zict/issues/61
+    def keys(self) -> Iterator[KT]:  # type: ignore
         return chain.from_iterable(self.mappings.values())
 
-    def values(self) -> Iterator[VT]:
+    def values(self) -> Iterator[VT]:  # type: ignore
         return chain.from_iterable(m.values() for m in self.mappings.values())
 
-    def items(self) -> Iterator[tuple[KT, VT]]:
+    def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
         return chain.from_iterable(m.items() for m in self.mappings.values())
 
     def __len__(self) -> int:

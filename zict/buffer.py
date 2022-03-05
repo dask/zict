@@ -123,13 +123,14 @@ class Buffer(ZictBase[KT, VT]):
         else:
             raise KeyError(key)
 
-    def keys(self) -> Iterator[KT]:
+    # FIXME dictionary views https://github.com/dask/zict/issues/61
+    def keys(self) -> Iterator[KT]:  # type: ignore
         return chain(self.fast.keys(), self.slow.keys())
 
-    def values(self) -> Iterator[VT]:
+    def values(self) -> Iterator[VT]:  # type: ignore
         return chain(self.fast.values(), self.slow.values())
 
-    def items(self) -> Iterator[tuple[KT, VT]]:
+    def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
         return chain(self.fast.items(), self.slow.items())
 
     def __len__(self) -> int:

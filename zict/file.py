@@ -97,7 +97,8 @@ class File(ZictBase[str, bytes]):
     def __contains__(self, key: object) -> bool:
         return key in self._keys
 
-    def keys(self) -> set[str]:
+    # FIXME dictionary views https://github.com/dask/zict/issues/61
+    def keys(self) -> set[str]:  # type: ignore
         return self._keys
 
     def __iter__(self) -> Iterator[str]:

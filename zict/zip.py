@@ -51,13 +51,14 @@ class Zip(MutableMapping[str, bytes]):
     def __setitem__(self, key: str, value: bytes) -> None:
         self.file.writestr(key, value)
 
-    def keys(self) -> Iterator[str]:
+    # FIXME dictionary views https://github.com/dask/zict/issues/61
+    def keys(self) -> Iterator[str]:  # type: ignore
         return (zi.filename for zi in self.file.filelist)
 
-    def values(self) -> Iterator[bytes]:
+    def values(self) -> Iterator[bytes]:  # type: ignore
         return (self.file.read(key) for key in self.keys())
 
-    def items(self) -> Iterator[tuple[str, bytes]]:
+    def items(self) -> Iterator[tuple[str, bytes]]:  # type: ignore
         return ((zi.filename, self.file.read(zi.filename)) for zi in self.file.filelist)
 
     def __iter__(self) -> Iterator[str]:

@@ -65,15 +65,16 @@ class LMDB(ZictBase[str, bytes]):
         with self.db.begin() as txn:
             return txn.cursor().set_key(_encode_key(key))
 
-    def items(self) -> Iterator[tuple[str, bytes]]:
+    # FIXME dictionary views https://github.com/dask/zict/issues/61
+    def items(self) -> Iterator[tuple[str, bytes]]:  # type: ignore
         cursor = self.db.begin().cursor()
         return ((_decode_key(k), v) for k, v in cursor.iternext(keys=True, values=True))
 
-    def keys(self) -> Iterator[str]:
+    def keys(self) -> Iterator[str]:  # type: ignore
         cursor = self.db.begin().cursor()
         return (_decode_key(k) for k in cursor.iternext(keys=True, values=False))
 
-    def values(self) -> Iterator[bytes]:
+    def values(self) -> Iterator[bytes]:  # type: ignore
         cursor = self.db.begin().cursor()
         return cursor.iternext(keys=False, values=True)
 

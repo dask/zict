@@ -66,10 +66,11 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
     def keys(self) -> KeysView[KT]:
         return self.d.keys()
 
-    def values(self) -> Iterator[VT]:
+    # FIXME dictionary views https://github.com/dask/zict/issues/61
+    def values(self) -> Iterator[VT]:  # type: ignore
         return (self.load(v) for v in self.d.values())  # type: ignore
 
-    def items(self) -> Iterator[tuple[KT, VT]]:
+    def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
         return ((k, self.load(v)) for k, v in self.d.items())  # type: ignore
 
     def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
