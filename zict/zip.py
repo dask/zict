@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import zipfile
-from collections.abc import Iterator, MutableMapping
+from collections.abc import Iterator
+from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

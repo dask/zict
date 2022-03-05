@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, MutableMapping
+from collections.abc import Iterable, Mapping
+from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
 from typing import Any, TypeVar, overload
 
 T = TypeVar("T")
