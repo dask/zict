@@ -1,21 +1,32 @@
+from __future__ import annotations
+
+from collections.abc import (
+    Callable,
+    ItemsView,
+    Iterator,
+    KeysView,
+    MutableMapping,
+    ValuesView,
+)
+
 from heapdict import heapdict
 
-from .common import ZictBase, close
+from .common import KT, VT, ZictBase, close
 
 
 def do_nothing(k, v):
     pass
 
 
-class LRU(ZictBase):
+class LRU(ZictBase[KT, VT]):
     """Evict Least Recently Used Elements.
 
     Parameters
     ----------
-    n: int
+    n: int or float
         Number of elements to keep, or total weight if weight= is used
     d: MutableMapping
-        Dictionary in which to hold elements
+        Dict-like in which to hold elements
     on_evict: list of callables
         Function:: k, v -> action to call on key value pairs prior to eviction
         If an exception occurs during an on_evict callback (e.g a callback tried
@@ -33,7 +44,24 @@ class LRU(ZictBase):
     Lost x 1
     """
 
-    def __init__(self, n, d, on_evict=None, weight=lambda k, v: 1):
+    d: MutableMapping[KT, VT]
+    heap: heapdict[KT, VT]
+    on_evict: list[Callable[[KT, VT], None]]
+    weight: Callable[[KT, VT], float]
+    n: float
+    i: int
+    total_weight: float
+    weights: dict[KT, float]
+
+    def __init__(
+        self,
+        n: float,
+        d: MutableMapping[KT, VT],
+        on_evict: Callable[[KT, VT], None]
+        | list[Callable[[KT, VT], None]]
+        | None = None,
+        weight: Callable[[KT, VT], float] = lambda k, v: 1,
+    ):
         self.d = d
         self.n = n
         self.heap = heapdict()
@@ -41,21 +69,22 @@ class LRU(ZictBase):
         if callable(on_evict):
             on_evict = [on_evict]
         self.on_evict = on_evict or []
-        self.weight = weight
+        # FIXME https://github.com/python/mypy/issues/708
+        self.weight = weight  # type: ignore
         self.total_weight = 0
-        self.weights = dict()
+        self.weights = {}
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: KT) -> VT:
         result = self.d[key]
         self.i += 1
         self.heap[key] = self.i
         return result
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: KT, value: VT) -> None:
         if key in self.d:
             del self[key]
 
-        weight = self.weight(key, value)
+        weight = self.weight(key, value)  # type: ignore
 
         def set_():
             self.d[key] = value
@@ -81,7 +110,7 @@ class LRU(ZictBase):
                 set_()
                 raise
 
-    def evict(self):
+    def evict(self) -> tuple[KT, VT, float]:
         """Evict least recently used key
 
         This is typically called from internal use, but can be externally
@@ -108,37 +137,38 @@ class LRU(ZictBase):
         self.total_weight -= weight
         return k, v, weight
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: KT) -> None:
         del self.d[key]
         del self.heap[key]
         self.total_weight -= self.weights.pop(key)
 
-    def keys(self):
+    def keys(self) -> KeysView[KT]:
         return self.d.keys()
 
-    def values(self):
+    def values(self) -> ValuesView[VT]:
         return self.d.values()
 
-    def items(self):
+    def items(self) -> ItemsView[KT, VT]:
         return self.d.items()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.d)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[KT]:
         return iter(self.d)
 
-    def __contains__(self, key):
+    def __contains__(self, key: object) -> bool:
         return key in self.d
 
-    def __str__(self):
+    def __str__(self) -> str:
         sub = str(self.d) if not isinstance(self.d, dict) else "dict"
         return f"<LRU: {self.total_weight}/{self.n} on {sub}>"
 
     __repr__ = __str__
 
-    def flush(self):
-        self.d.flush()
+    def flush(self) -> None:
+        if hasattr(self.d, "flush"):
+            self.d.flush()  # type: ignore
 
-    def close(self):
+    def close(self) -> None:
         close(self.d)

@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+from collections.abc import Callable, Iterator, MutableMapping
 from itertools import chain
 
-from .common import ZictBase, close
+from .common import KT, VT, ZictBase, close
 from .lru import LRU
 
 
-class Buffer(ZictBase):
+class Buffer(ZictBase[KT, VT]):
     """Buffer one dictionary on top of another
 
     This creates a MutableMapping by combining two MutableMappings, one that
@@ -16,6 +19,10 @@ class Buffer(ZictBase):
     ----------
     fast: MutableMapping
     slow: MutableMapping
+    n: float
+        Total size of fast that triggers evictions to slow
+    weight: f(k, v) -> float, optional
+        Weight of each key/value pair (default: 1)
     fast_to_slow_callbacks: list of callables
         These functions run every time data moves from the fast to the slow
         mapping.  They take two arguments, a key and a value
@@ -38,19 +45,31 @@ class Buffer(ZictBase):
     LRU
     """
 
+    fast: LRU[KT, VT]
+    slow: MutableMapping[KT, VT]
+    n: float
+    weight: Callable[[KT, VT], float]
+    fast_to_slow_callbacks: list[Callable[[KT, VT], None]]
+    slow_to_fast_callbacks: list[Callable[[KT, VT], None]]
+
     def __init__(
         self,
-        fast,
-        slow,
-        n,
-        weight=lambda k, v: 1,
-        fast_to_slow_callbacks=None,
-        slow_to_fast_callbacks=None,
+        fast: MutableMapping[KT, VT],
+        slow: MutableMapping[KT, VT],
+        n: float,
+        weight: Callable[[KT, VT], float] = lambda k, v: 1,
+        fast_to_slow_callbacks: Callable[[KT, VT], None]
+        | list[Callable[[KT, VT], None]]
+        | None = None,
+        slow_to_fast_callbacks: Callable[[KT, VT], None]
+        | list[Callable[[KT, VT], None]]
+        | None = None,
     ):
         self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
         self.slow = slow
         self.n = n
-        self.weight = weight
+        # FIXME https://github.com/python/mypy/issues/708
+        self.weight = weight  # type: ignore
         if callable(fast_to_slow_callbacks):
             fast_to_slow_callbacks = [fast_to_slow_callbacks]
         if callable(slow_to_fast_callbacks):
@@ -58,27 +77,29 @@ class Buffer(ZictBase):
         self.fast_to_slow_callbacks = fast_to_slow_callbacks or []
         self.slow_to_fast_callbacks = slow_to_fast_callbacks or []
 
-    def fast_to_slow(self, key, value):
+    def fast_to_slow(self, key: KT, value: VT) -> None:
         self.slow[key] = value
         try:
             for cb in self.fast_to_slow_callbacks:
                 cb(key, value)
-        # LRU catches exception, raises and makes sure keys are not lost and located in fast.
+        # LRU catches exception, raises and makes sure keys are not lost and located in
+        # fast.
         except Exception:
             del self.slow[key]
             raise
 
-    def slow_to_fast(self, key):
+    def slow_to_fast(self, key: KT) -> VT:
         value = self.slow[key]
         # Avoid useless movement for heavy values
-        if self.weight(key, value) <= self.n:
+        w = self.weight(key, value)  # type: ignore
+        if w <= self.n:
             del self.slow[key]
             self.fast[key] = value
         for cb in self.slow_to_fast_callbacks:
             cb(key, value)
         return value
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: KT) -> VT:
         if key in self.fast:
             return self.fast[key]
         elif key in self.slow:
@@ -86,7 +107,7 @@ class Buffer(ZictBase):
         else:
             raise KeyError(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: KT, value: VT) -> None:
         if key in self.slow:
             del self.slow[key]
         # This may trigger an eviction from fast to slow of older keys.
@@ -94,7 +115,7 @@ class Buffer(ZictBase):
         # into self.slow instead (see LRU.__setitem__).
         self.fast[key] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: KT) -> None:
         if key in self.fast:
             del self.fast[key]
         elif key in self.slow:
@@ -102,33 +123,34 @@ class Buffer(ZictBase):
         else:
             raise KeyError(key)
 
-    def keys(self):
+    def keys(self) -> Iterator[KT]:
         return chain(self.fast.keys(), self.slow.keys())
 
-    def values(self):
+    def values(self) -> Iterator[VT]:
         return chain(self.fast.values(), self.slow.values())
 
-    def items(self):
+    def items(self) -> Iterator[tuple[KT, VT]]:
         return chain(self.fast.items(), self.slow.items())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.fast) + len(self.slow)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[KT]:
         return chain(iter(self.fast), iter(self.slow))
 
-    def __contains__(self, key):
+    def __contains__(self, key: object) -> bool:
         return key in self.fast or key in self.slow
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Buffer<{self.fast}, {self.slow}>"
 
     __repr__ = __str__
 
-    def flush(self):
+    def flush(self) -> None:
         self.fast.flush()
-        self.slow.flush()
+        if hasattr(self.slow, "flush"):
+            self.slow.flush()  # type: ignore
 
-    def close(self):
+    def close(self) -> None:
         close(self.fast)
         close(self.slow)

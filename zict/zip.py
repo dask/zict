@@ -1,11 +1,15 @@
-try:
-    from collections.abc import MutableMapping
-except ImportError:
-    from collections import MutableMapping
+from __future__ import annotations
+
 import zipfile
+from collections.abc import Iterator, MutableMapping
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # TODO: move to typing on Python 3.8+
+    from typing_extensions import Literal
 
 
-class Zip(MutableMapping):
+class Zip(MutableMapping[str, bytes]):
     """Mutable Mapping interface to a Zip file
 
     Keys must be strings, values must be bytes
@@ -24,53 +28,60 @@ class Zip(MutableMapping):
     >>> z.flush()  # flush and write metadata to disk  # doctest: +SKIP
     """
 
-    def __init__(self, filename, mode="a"):
+    filename: str
+    mode: Literal["r", "w", "x", "a", "closed"]
+    _file: zipfile.ZipFile | None
+
+    def __init__(self, filename: str, mode: Literal["r", "w", "x", "a"] = "a"):
         self.filename = filename
         self.mode = mode
         self._file = None
 
     @property
-    def file(self):
+    def file(self) -> zipfile.ZipFile:
         if self.mode == "closed":
             raise OSError("File closed")
         if not self._file or not self._file.fp:
             self._file = zipfile.ZipFile(self.filename, mode=self.mode)
         return self._file
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> bytes:
         return self.file.read(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: bytes) -> None:
         self.file.writestr(key, value)
 
-    def keys(self):
+    def keys(self) -> Iterator[str]:
         return (zi.filename for zi in self.file.filelist)
 
-    def values(self):
-        return map(self.file.read, self.keys())
+    def values(self) -> Iterator[bytes]:
+        return (self.file.read(key) for key in self.keys())
 
-    def items(self):
+    def items(self) -> Iterator[tuple[str, bytes]]:
         return ((zi.filename, self.file.read(zi.filename)) for zi in self.file.filelist)
 
-    def __iter__(self):
-        return self.keys()
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.keys())
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         raise NotImplementedError("Not supported by stdlib zipfile")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.file.filelist)
 
-    def flush(self):
-        self.file.fp.flush()
-        self.file.close()
+    def flush(self) -> None:
+        if self._file:
+            if self._file.fp:
+                self._file.fp.flush()
+            self._file.close()
+            self._file = None
 
-    def close(self):
+    def close(self) -> None:
         self.flush()
         self.mode = "closed"
 
-    def __enter__(self):
+    def __enter__(self) -> Zip:
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type, value, traceback) -> None:
         self.close()
