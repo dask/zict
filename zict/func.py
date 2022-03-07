@@ -74,7 +74,8 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
         return ((k, self.load(v)) for k, v in self.d.items())  # type: ignore
 
     def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
-        self.d.update((k, self.dump(v)) for k, v in items)  # type: ignore
+        it = ((k, self.dump(v)) for k, v in items)  # type: ignore
+        self.d.update(it)
 
     def __iter__(self) -> Iterator[KT]:
         return iter(self.d)
