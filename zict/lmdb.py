@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 
 from .common import ZictBase
 
@@ -78,7 +78,7 @@ class LMDB(ZictBase[str, bytes]):
         cursor = self.db.begin().cursor()
         return cursor.iternext(keys=False, values=True)
 
-    def _do_update(self, items: Iterable[tuple[str, bytes]]) -> None:
+    def _do_update(self, items: list[tuple[str, bytes]]) -> None:
         # Optimized version of update() using a single putmulti() call.
         items_enc = [(_encode_key(k), v) for k, v in items]
         with self.db.begin(write=True) as txn:

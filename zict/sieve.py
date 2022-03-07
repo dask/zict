@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
+from collections.abc import Callable, Iterator, Mapping, MutableMapping
 from itertools import chain
 from typing import Generic, TypeVar
 
@@ -66,7 +66,7 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
     def __delitem__(self, key: KT) -> None:
         del self.key_to_mapping.pop(key)[key]
 
-    def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
+    def _do_update(self, items: list[tuple[KT, VT]]) -> None:
         # Optimized update() implementation issuing a single update()
         # call per underlying mapping.
         updates = defaultdict(list)

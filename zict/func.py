@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator, KeysView, MutableMapping
+from collections.abc import Callable, Iterator, KeysView, MutableMapping
 from typing import Generic, TypeVar
 
 from .common import KT, VT, ZictBase, close
@@ -73,28 +73,29 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
     def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
         return ((k, self.load(v)) for k, v in self.d.items())  # type: ignore
 
-    def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
+    def _do_update(self, items: list[tuple[KT, VT]]) -> None:
         self.d.update((k, self.dump(v)) for k, v in items)  # type: ignore
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[KT]:
         return iter(self.d)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.d)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<Func: {funcname(self.dump)}<->{funcname(self.load)} {self.d}>"
 
     __repr__ = __str__
 
-    def flush(self):
-        self.d.flush()
+    def flush(self) -> None:
+        if hasattr(self.d, "flush"):
+            self.d.flush()  # type: ignore
 
-    def close(self):
+    def close(self) -> None:
         close(self.d)
 
 
-def funcname(func):
+def funcname(func) -> str:
     """Get the name of a function."""
     while hasattr(func, "func"):
         func = func.func

@@ -14,10 +14,6 @@ from heapdict import heapdict
 from .common import KT, VT, ZictBase, close
 
 
-def do_nothing(k, v):
-    pass
-
-
 class LRU(ZictBase[KT, VT]):
     """Evict Least Recently Used Elements.
 
