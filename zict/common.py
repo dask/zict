@@ -1,7 +1,5 @@
-try:
-    from collections.abc import Mapping, MutableMapping
-except ImportError:
-    from collections import Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping
+from itertools import chain
 
 
 class ZictBase(MutableMapping):
@@ -23,16 +21,16 @@ class ZictBase(MutableMapping):
         if args:
             other = args[0]
             if isinstance(other, Mapping) or hasattr(other, "items"):
-                items += other.items()
+                items = other.items()
             else:
                 # Assuming (key, value) pairs
-                items += other
+                items = other
         if kwds:
-            items += kwds.items()
+            items = chain(items, kwds.items())
         self._do_update(items)
 
     def _do_update(self, items):
-        # Default implementation, can be overriden for speed
+        # Default implementation; can be overridden for speed
         for k, v in items:
             self[k] = v
 
