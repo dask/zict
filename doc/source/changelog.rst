@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.2.0 - Unreleased
+------------------
+- If you call Func.update() and Func wraps around File, do not store all dump outputs in
+  memory (:pr:`64`) `Guido Imperiale`_
+
+
 2.1.0 - 2022-02-25
 ------------------
 - LRU and Buffer now deal with exceptions raised by the callbacks - namely, OSError
