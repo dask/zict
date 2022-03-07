@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, KeysView, MutableMapping
+from collections.abc import Callable, Iterable, Iterator, KeysView, MutableMapping
 from typing import Generic, TypeVar
 
 from .common import KT, VT, ZictBase, close
@@ -73,7 +73,7 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
     def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
         return ((k, self.load(v)) for k, v in self.d.items())  # type: ignore
 
-    def _do_update(self, items: list[tuple[KT, VT]]) -> None:
+    def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
         self.d.update((k, self.dump(v)) for k, v in items)  # type: ignore
 
     def __iter__(self) -> Iterator[KT]:

@@ -47,7 +47,7 @@ class ZictBase(MutableMapping[KT, VT]):
             items += kwds.items()
         self._do_update(items)
 
-    def _do_update(self, items: list[tuple[KT, VT]]) -> None:
+    def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
         # Default implementation, can be overriden for speed
         for k, v in items:
             self[k] = v
