@@ -1,13 +1,29 @@
-try:
-    from collections.abc import Mapping, MutableMapping
-except ImportError:
-    from collections import Mapping, MutableMapping
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
+from typing import Any, TypeVar, overload
+
+T = TypeVar("T")
+KT = TypeVar("KT")
+VT = TypeVar("VT")
 
 
-class ZictBase(MutableMapping):
-    """
-    Base class for zict mappings.
-    """
+class ZictBase(MutableMapping[KT, VT]):
+    """Base class for zict mappings"""
+
+    # TODO use positional-only arguments to protect self (requires Python 3.8+)
+    @overload
+    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
+        ...
+
+    @overload
+    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
+        ...
+
+    @overload
+    def update(self, **kwargs: VT) -> None:
+        ...
 
     def update(*args, **kwds):
         # Boilerplate for implementing an update() method
@@ -31,26 +47,22 @@ class ZictBase(MutableMapping):
             items += kwds.items()
         self._do_update(items)
 
-    def _do_update(self, items):
+    def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
         # Default implementation, can be overriden for speed
         for k, v in items:
             self[k] = v
 
-    def close(self):
-        """
-        Release any system resources held by this object.
-        """
+    def close(self) -> None:
+        """Release any system resources held by this object"""
 
-    def __enter__(self):
+    def __enter__(self: T) -> T:
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args) -> None:
         self.close()
 
 
-def close(z):
-    """
-    Close *z* if possible.
-    """
+def close(z: Any) -> None:
+    """Close *z* if possible."""
     if hasattr(z, "close"):
         z.close()
