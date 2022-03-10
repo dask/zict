@@ -3,6 +3,7 @@ Changelog
 
 2.2.0 - Unreleased
 ------------------
+- Added type annotations (:pr:`62`) `Guido Imperiale`_
 - If you call Func.update() and Func wraps around File, do not store all dump outputs in
   memory (:pr:`64`) `Guido Imperiale`_
 

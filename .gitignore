@@ -2,3 +2,7 @@
 *.zip
 doc/build/*
 .idea
+build/
+dist/
+.mypy_cache/
+*.egg-info/

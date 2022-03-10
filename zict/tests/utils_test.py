@@ -1,10 +1,6 @@
 import random
 import string
-
-try:
-    from collections.abc import MutableMapping
-except ImportError:
-    from collections import MutableMapping
+from collections.abc import MutableMapping
 
 import pytest
 
