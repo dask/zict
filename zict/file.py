@@ -85,7 +85,16 @@ class File(ZictBase[str, bytes]):
             else:
                 return fh.read()
 
-    def __setitem__(self, key: str, value: bytes) -> None:
+    def __setitem__(
+        self,
+        key: str,
+        value: bytes
+        | bytearray
+        | list[bytes]
+        | list[bytearray]
+        | tuple[bytes]
+        | tuple[bytearray],
+    ) -> None:
         fn = os.path.join(self.directory, _safe_key(key))
         with open(fn, "wb") as fh:
             if isinstance(value, (tuple, list)):

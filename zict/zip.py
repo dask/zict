@@ -6,8 +6,10 @@ from typing import MutableMapping  # TODO move to collections.abc (needs Python 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    # TODO: move to typing on Python 3.8+
-    from typing_extensions import Literal
+    # TODO: move to typing on Python 3.8+ and 3.10+ respectively
+    from typing_extensions import Literal, TypeAlias
+
+    FileMode: TypeAlias = Literal["r", "w", "x", "a"]
 
 
 class Zip(MutableMapping[str, bytes]):
@@ -30,10 +32,10 @@ class Zip(MutableMapping[str, bytes]):
     """
 
     filename: str
-    mode: Literal["r", "w", "x", "a", "closed"]
+    mode: FileMode | Literal["closed"]
     _file: zipfile.ZipFile | None
 
-    def __init__(self, filename: str, mode: Literal["r", "w", "x", "a"] = "a"):
+    def __init__(self, filename: str, mode: FileMode = "a"):
         self.filename = filename
         self.mode = mode
         self._file = None
