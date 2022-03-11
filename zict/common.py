@@ -63,7 +63,15 @@ class ZictBase(MutableMapping[KT, VT]):
         self.close()
 
 
-def close(z: Any) -> None:
+def close(*z: Any) -> None:
     """Close *z* if possible."""
-    if hasattr(z, "close"):
-        z.close()
+    for zi in z:
+        if hasattr(zi, "close"):
+            zi.close()
+
+
+def flush(*z: Any) -> None:
+    """Flush *z* if possible."""
+    for zi in z:
+        if hasattr(zi, "flush"):
+            zi.flush()

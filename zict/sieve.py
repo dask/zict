@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMappin
 from itertools import chain
 from typing import Generic, TypeVar
 
-from .common import KT, VT, ZictBase, close
+from .common import KT, VT, ZictBase, close, flush
 
 MKT = TypeVar("MKT")
 
@@ -112,10 +112,7 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
     __repr__ = __str__
 
     def flush(self) -> None:
-        for m in self.mappings.values():
-            if hasattr(m, "flush"):
-                m.flush()  # type: ignore
+        flush(*self.mappings.values())
 
     def close(self) -> None:
-        for m in self.mappings.values():
-            close(m)
+        close(*self.mappings.values())

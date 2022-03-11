@@ -11,7 +11,7 @@ from collections.abc import (
 
 from heapdict import heapdict
 
-from .common import KT, VT, ZictBase, close
+from .common import KT, VT, ZictBase, close, flush
 
 
 class LRU(ZictBase[KT, VT]):
@@ -33,7 +33,7 @@ class LRU(ZictBase[KT, VT]):
 
     Examples
     --------
-    >>> lru = LRU(2, dict(), on_evict=lambda k, v: print("Lost", k, v))
+    >>> lru = LRU(2, {}, on_evict=lambda k, v: print("Lost", k, v))
     >>> lru['x'] = 1
     >>> lru['y'] = 2
     >>> lru['z'] = 3
@@ -163,8 +163,7 @@ class LRU(ZictBase[KT, VT]):
     __repr__ = __str__
 
     def flush(self) -> None:
-        if hasattr(self.d, "flush"):
-            self.d.flush()  # type: ignore
+        flush(self.d)
 
     def close(self) -> None:
         close(self.d)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Iterator, KeysView, MutableMapping
 from typing import Generic, TypeVar
 
-from .common import KT, VT, ZictBase, close
+from .common import KT, VT, ZictBase, close, flush
 
 WT = TypeVar("WT")
 
@@ -89,8 +89,7 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
     __repr__ = __str__
 
     def flush(self) -> None:
-        if hasattr(self.d, "flush"):
-            self.d.flush()  # type: ignore
+        flush(self.d)
 
     def close(self) -> None:
         close(self.d)

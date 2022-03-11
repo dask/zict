@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator, MutableMapping
 from itertools import chain
 
-from .common import KT, VT, ZictBase, close
+from .common import KT, VT, ZictBase, close, flush
 from .lru import LRU
 
 
@@ -148,10 +148,7 @@ class Buffer(ZictBase[KT, VT]):
     __repr__ = __str__
 
     def flush(self) -> None:
-        self.fast.flush()
-        if hasattr(self.slow, "flush"):
-            self.slow.flush()  # type: ignore
+        flush(self.fast, self.slow)
 
     def close(self) -> None:
-        close(self.fast)
-        close(self.slow)
+        close(self.fast, self.slow)
