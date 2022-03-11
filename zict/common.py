@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from itertools import chain
 from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
 from typing import Any, TypeVar, overload
 
@@ -39,12 +40,12 @@ class ZictBase(MutableMapping[KT, VT]):
         if args:
             other = args[0]
             if isinstance(other, Mapping) or hasattr(other, "items"):
-                items += other.items()
+                items = other.items()
             else:
                 # Assuming (key, value) pairs
-                items += other
+                items = other
         if kwds:
-            items += kwds.items()
+            items = chain(items, kwds.items())
         self._do_update(items)
 
     def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
