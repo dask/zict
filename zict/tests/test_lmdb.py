@@ -6,8 +6,7 @@ import tempfile
 import pytest
 
 from zict.lmdb import LMDB
-
-from . import utils_test
+from zict.tests import utils_test
 
 
 @pytest.fixture

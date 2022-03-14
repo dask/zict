@@ -4,8 +4,7 @@ import shutil
 import pytest
 
 from zict.file import File
-
-from . import utils_test
+from zict.tests import utils_test
 
 
 @pytest.fixture

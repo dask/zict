@@ -5,8 +5,7 @@ import pytest
 
 from zict import Func
 from zict.common import ZictBase
-
-from . import utils_test
+from zict.tests import utils_test
 
 
 def inc(x):

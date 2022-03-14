@@ -4,7 +4,7 @@ import weakref
 from collections.abc import Iterator, KeysView, MutableMapping
 from typing import TYPE_CHECKING
 
-from .common import KT, VT, ZictBase, close, flush
+from zict.common import KT, VT, ZictBase, close, flush
 
 
 class Cache(ZictBase[KT, VT]):
