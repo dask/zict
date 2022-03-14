@@ -30,7 +30,7 @@ class Cache(ZictBase[KT, VT]):
 
     Read data from disk every time, unless it was previously accessed and it's still in
     use somewhere else in the application
-    >>> d = Cache(File('myfile'), WeakRefCache())  # doctest: +SKIP
+    >>> d = Cache(File('myfile'), WeakValueMapping())  # doctest: +SKIP
     """
 
     data: MutableMapping[KT, VT]
@@ -94,12 +94,12 @@ class Cache(ZictBase[KT, VT]):
 
 if TYPE_CHECKING:
     # TODO Python 3.9: remove this branch and just use [] in the implementation below
-    class WeakRefCache(weakref.WeakValueDictionary[KT, VT]):
+    class WeakValueMapping(weakref.WeakValueDictionary[KT, VT]):
         ...
 
 else:
 
-    class WeakRefCache(weakref.WeakValueDictionary):
+    class WeakValueMapping(weakref.WeakValueDictionary):
         """Variant of weakref.WeakValueDictionary which silently ignores objects that
         can't be referenced by a weakref.ref
         """

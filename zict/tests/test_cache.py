@@ -3,7 +3,7 @@ from collections import UserDict
 
 import pytest
 
-from zict.cache import Cache, WeakRefCache
+from zict.cache import Cache, WeakValueMapping
 
 
 def test_cache_get_set_del():
@@ -113,11 +113,11 @@ def test_slow_fails():
     assert (d.data.data, d.cache) == ({}, {})
 
 
-def test_weakrefcache():
+def test_weakvaluemapping():
     class C:
         pass
 
-    d = WeakRefCache()
+    d = WeakValueMapping()
     a = C()
     d["a"] = a
     assert d["a"] is a

@@ -1,5 +1,5 @@
 from zict.buffer import Buffer
-from zict.cache import Cache, WeakRefCache
+from zict.cache import Cache, WeakValueMapping
 from zict.file import File
 from zict.func import Func
 from zict.lmdb import LMDB
