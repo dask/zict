@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterable, Iterator
 
-from .common import ZictBase
+from zict.common import ZictBase
 
 
 def _encode_key(key: str) -> bytes:

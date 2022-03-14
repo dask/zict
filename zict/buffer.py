@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator, MutableMapping
 from itertools import chain
 
-from .common import KT, VT, ZictBase, close
-from .lru import LRU
+from zict.common import KT, VT, ZictBase, close
+from zict.lru import LRU
 
 
 class Buffer(ZictBase[KT, VT]):

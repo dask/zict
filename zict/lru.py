@@ -11,7 +11,7 @@ from collections.abc import (
 
 from heapdict import heapdict
 
-from .common import KT, VT, ZictBase, close
+from zict.common import KT, VT, ZictBase, close
 
 
 class LRU(ZictBase[KT, VT]):

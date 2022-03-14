@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMappin
 from itertools import chain
 from typing import Generic, TypeVar
 
-from .common import KT, VT, ZictBase, close
+from zict.common import KT, VT, ZictBase, close
 
 MKT = TypeVar("MKT")
 

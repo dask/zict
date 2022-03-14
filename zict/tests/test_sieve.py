@@ -1,6 +1,5 @@
 from zict import Sieve
-
-from . import utils_test
+from zict.tests import utils_test
 
 
 def test_simple():
