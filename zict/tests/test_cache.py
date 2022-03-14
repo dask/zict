@@ -126,5 +126,6 @@ def test_weakrefcache():
     assert "a" not in d
 
     # str does not support weakrefs
-    d["b"] = "bbb"
+    b = "bbb"
+    d["b"] = b
     assert "b" not in d
