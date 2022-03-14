@@ -5,7 +5,7 @@ import os
 from collections.abc import Iterator
 from urllib.parse import quote, unquote
 
-from .common import ZictBase
+from zict.common import ZictBase
 
 
 def _safe_key(key: str) -> str:

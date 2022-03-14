@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Iterator, KeysView, MutableMapping
 from typing import Generic, TypeVar
 
-from .common import KT, VT, ZictBase, close
+from zict.common import KT, VT, ZictBase, close
 
 WT = TypeVar("WT")
 

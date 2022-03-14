@@ -1,8 +1,7 @@
 import pytest
 
 from zict import LRU
-
-from . import utils_test
+from zict.tests import utils_test
 
 
 def test_simple():
