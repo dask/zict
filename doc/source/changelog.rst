@@ -6,6 +6,8 @@ Changelog
 - Added type annotations (:pr:`62`) `Guido Imperiale`_
 - If you call Func.update() and Func wraps around File, do not store all dump outputs in
   memory (:pr:`64`) `Guido Imperiale`_
+- Added new classes ``zict.Cache`` and ``zict.WeakRefCache``
+  (:pr:`65`) `Guido Imperiale`_
 
 
 2.1.0 - 2022-02-25

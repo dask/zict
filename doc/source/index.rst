@@ -40,6 +40,10 @@ API
 
 .. autoclass:: zict.buffer.Buffer
    :members:
+.. autoclass:: zict.cache.Cache
+   :members:
+.. autoclass:: zict.cache.WeakValueMapping
+   :members:
 .. autoclass:: zict.file.File
    :members:
 .. autoclass:: zict.func.Func
