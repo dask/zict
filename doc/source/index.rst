@@ -42,7 +42,7 @@ API
    :members:
 .. autoclass:: zict.cache.Cache
    :members:
-.. autoclass:: zict.cache.WeakRefCache
+.. autoclass:: zict.cache.WeakValueMapping
    :members:
 .. autoclass:: zict.file.File
    :members:
