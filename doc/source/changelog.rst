@@ -3,8 +3,9 @@ Changelog
 
 2.2.0 - Unreleased
 ------------------
+- Added ``python_requires`` to ``setup.py`` (:pr:`60`) `Carlos Cordoba`_
 - Added type annotations (:pr:`62`) `Guido Imperiale`_
-- If you call Func.update() and Func wraps around File, do not store all dump outputs in
+- If you call ``Func.update()`` and ``Func`` wraps around ``File``, do not store all dump outputs in
   memory (:pr:`64`) `Guido Imperiale`_
 - Added new classes ``zict.Cache`` and ``zict.WeakRefCache``
   (:pr:`65`) `Guido Imperiale`_
@@ -42,3 +43,4 @@ Changelog
 .. _`Guido Imperiale`: https://github.com/crusaderky
 .. _`Thomas J. Fan`: https://github.com/thomasjpfan
 .. _`jakirkham`: https://github.com/jakirkham
+.. _`Carlos Cordoba`: https://github.com/ccordoba12

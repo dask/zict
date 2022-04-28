@@ -8,4 +8,4 @@ from zict.sieve import Sieve
 from zict.zip import Zip
 
 # Must be kept aligned with setup.cfg
-__version__ = "2.2.0.dev2"
+__version__ = "2.2.0"
