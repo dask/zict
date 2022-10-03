@@ -44,6 +44,7 @@ def test_memmap_implementation(fn):
     assert not z
 
     mv = memoryview(b"123")
+    assert "x" not in z
     z["x"] = mv
     assert os.listdir(fn) == ["x"]
     assert "x" in z
