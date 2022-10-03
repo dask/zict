@@ -45,9 +45,8 @@ def test_memmap_implementation(fn):
 
     z["x"] = b"123"
     assert os.listdir(fn) == ["x"]
-    assert z["x"] == memoryview(b"123")
-
     assert "x" in z
+    assert z["x"] == memoryview(b"123")
 
 
 def test_str(fn):
