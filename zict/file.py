@@ -35,6 +35,7 @@ class File(ZictBase[str, bytes]):
     ----------
     directory: string
     mode: string, ('r', 'w', 'a'), defaults to 'a'
+    memmap: bool, use `mmap` for reading, defaults to `False`
 
     Examples
     --------
