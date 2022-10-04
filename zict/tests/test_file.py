@@ -43,11 +43,12 @@ def test_memmap_implementation(fn):
     z = File(fn, memmap=True)
     assert not z
 
-    z["x"] = b"123"
+    mv = memoryview(b"123")
+    assert "x" not in z
+    z["x"] = mv
     assert os.listdir(fn) == ["x"]
-    assert z["x"] == memoryview(b"123")
-
     assert "x" in z
+    assert z["x"] == mv
 
 
 def test_str(fn):
