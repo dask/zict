@@ -9,6 +9,7 @@ Changelog
   memory (:pr:`64`) `Guido Imperiale`_
 - Added new classes ``zict.Cache`` and ``zict.WeakRefCache``
   (:pr:`65`) `Guido Imperiale`_
+- Require Python 3.8 (drop Python 3.7) (:pr:`72`) `jakirkham`_
 
 
 2.1.0 - 2022-02-25
