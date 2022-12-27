@@ -34,7 +34,6 @@ class File(ZictBase[str, bytes]):
     Parameters
     ----------
     directory: string
-    mode: string, ('r', 'w', 'a'), defaults to 'a'
     memmap: bool, use `mmap` for reading, defaults to `False`
 
     Examples
@@ -56,13 +55,11 @@ class File(ZictBase[str, bytes]):
     """
 
     directory: str
-    mode: str
     memmap: bool
     _keys: set[str]
 
-    def __init__(self, directory: str, mode: str = "a", memmap: bool = False):
+    def __init__(self, directory: str, memmap: bool = False):
         self.directory = directory
-        self.mode = mode
         self.memmap = memmap
         self._keys = set()
         if not os.path.exists(self.directory):
@@ -72,19 +69,31 @@ class File(ZictBase[str, bytes]):
                 self._keys.add(_unsafe_key(n))
 
     def __str__(self) -> str:
-        return f'<File: {self.directory}, mode="{self.mode}", {len(self)} elements>'
+        return f"<File: {self.directory}, {len(self)} elements>"
 
     __repr__ = __str__
 
-    def __getitem__(self, key: str) -> bytes:
+    def __getitem__(self, key: str) -> bytearray | memoryview:
         if key not in self._keys:
             raise KeyError(key)
         fn = os.path.join(self.directory, _safe_key(key))
-        with open(fn, "rb") as fh:
-            if self.memmap:
-                return memoryview(mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ))
-            else:
-                return fh.read()
+
+        # distributed.protocol.numpy.deserialize_numpy_ndarray makes sure that, if the
+        # numpy array was writeable before serialization, remains writeable afterwards.
+        # If it receives a read-only buffer (e.g. from fh.read() or from a mmap to a
+        # read-only file descriptor), it performs an expensive memcpy.
+        # Note that this is a dask-specific feature; vanilla pickle.loads will instead
+        # return an array with flags.writeable=False.
+        if self.memmap:
+            with open(fn, "r+b") as fh:
+                return memoryview(mmap.mmap(fh.fileno(), 0))
+        else:
+            with open(fn, "rb") as fh:
+                size = os.fstat(fh.fileno()).st_size
+                buf = bytearray(size)
+                nread = fh.readinto(buf)
+                assert nread == size
+                return buf
 
     def __setitem__(
         self,

@@ -37,6 +37,9 @@ def test_implementation(fn):
         assert f.read() == b"123"
 
     assert "x" in z
+    out = z["x"]
+    assert isinstance(out, bytearray)
+    assert out == b"123"
 
 
 def test_memmap_implementation(fn):
@@ -48,15 +51,16 @@ def test_memmap_implementation(fn):
     z["x"] = mv
     assert os.listdir(fn) == ["x"]
     assert "x" in z
-    assert z["x"] == mv
+    mv2 = z["x"]
+    assert mv2 == b"123"
+    # Buffer is writeable
+    mv2[0] = mv2[1]
+    assert mv2 == b"223"
 
 
 def test_str(fn):
     z = File(fn)
-    assert fn in str(z)
-    assert fn in repr(z)
-    assert z.mode in str(z)
-    assert z.mode in repr(z)
+    assert str(z) == repr(z) == f"<File: {fn}, 0 elements>"
 
 
 def test_setitem_typeerror(fn):
