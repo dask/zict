@@ -1,34 +1,34 @@
 repos:
-  -   repo: https://github.com/MarcoGorelli/absolufy-imports
-      rev: v0.3.1
-      hooks:
+  - repo: https://github.com/MarcoGorelli/absolufy-imports
+    rev: v0.3.1
+    hooks:
       - id: absolufy-imports
         name: absolufy-imports
-  -   repo: https://github.com/pycqa/isort
-      rev: 5.10.1
-      hooks:
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
       - id: isort
         language_version: python3
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.0
+    rev: v3.2.2
     hooks:
       - id: pyupgrade
         args:
           - --py37-plus
-  -   repo: https://github.com/psf/black
-      rev: 22.3.0
-      hooks:
+  - repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
       - id: black
         language_version: python3
         args:
           - --target-version=py37
-  -   repo: https://gitlab.com/pycqa/flake8
-      rev: 4.0.1
-      hooks:
+  - repo: https://github.com/pycqa/flake8
+    rev: 5.0.4
+    hooks:
       - id: flake8
         language_version: python3
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.931
+    rev: v0.991
     hooks:
       - id: mypy
         additional_dependencies:
