@@ -14,7 +14,7 @@ class ZictBase(MutableMapping[KT, VT]):
     """Base class for zict mappings"""
 
     # TODO use positional-only arguments to protect self (requires Python 3.8+)
-    @overload  # type: ignore[override]
+    @overload
     def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
         ...
 
