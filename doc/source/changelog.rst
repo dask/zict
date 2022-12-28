@@ -3,6 +3,8 @@ Changelog
 
 2.3.0 - Unreleased
 ------------------
+- ``File.__getitem__`` now returns bytearray instead of bytes. This prevents a memcpy
+  when deserializing numpy arrays with dask. (:pr:`74`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28
