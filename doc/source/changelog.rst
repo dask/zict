@@ -1,7 +1,11 @@
 Changelog
 =========
 
-2.2.0 - Unreleased
+2.3.0 - Unreleased
+------------------
+
+
+2.2.0 - 2022-04-28
 ------------------
 - Added ``python_requires`` to ``setup.py`` (:pr:`60`) `Carlos Cordoba`_
 - Added type annotations (:pr:`62`) `Guido Imperiale`_
