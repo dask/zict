@@ -9,8 +9,6 @@ from collections.abc import (
     ValuesView,
 )
 
-from heapdict import heapdict
-
 from zict.common import KT, VT, ZictBase, close, flush
 
 
@@ -22,7 +20,8 @@ class LRU(ZictBase[KT, VT]):
     n: int or float
         Number of elements to keep, or total weight if weight= is used
     d: MutableMapping
-        Dict-like in which to hold elements
+        Dict-like in which to hold elements. There are no expectations on its internal
+        ordering. Iteration on the LRU follows the order of the underlying mapping.
     on_evict: list of callables
         Function:: k, v -> action to call on key value pairs prior to eviction
         If an exception occurs during an on_evict callback (e.g a callback tried
@@ -41,11 +40,10 @@ class LRU(ZictBase[KT, VT]):
     """
 
     d: MutableMapping[KT, VT]
-    heap: heapdict[KT, VT]
+    order: dict[KT, None]  # This is used as an insertion-sorted set
     on_evict: list[Callable[[KT, VT], None]]
     weight: Callable[[KT, VT], float]
     n: float
-    i: int
     total_weight: float
     weights: dict[KT, float]
 
@@ -60,38 +58,39 @@ class LRU(ZictBase[KT, VT]):
     ):
         self.d = d
         self.n = n
-        self.heap = heapdict()
-        self.i = 0
+        self.order = dict.fromkeys(d)
         if callable(on_evict):
             on_evict = [on_evict]
         self.on_evict = on_evict or []
-        # FIXME https://github.com/python/mypy/issues/708
-        self.weight = weight  # type: ignore
-        self.total_weight = 0
-        self.weights = {}
+        self.weight = weight
+        self.weights = {k: weight(k, v) for k, v in d.items()}
+        self.total_weight = sum(self.weights.values())
+        while self.total_weight > n:
+            self.evict()
 
     def __getitem__(self, key: KT) -> VT:
         result = self.d[key]
-        self.i += 1
-        self.heap[key] = self.i
+        del self.order[key]
+        self.order[key] = None
         return result
 
     def __setitem__(self, key: KT, value: VT) -> None:
-        if key in self.d:
+        try:
             del self[key]
+        except KeyError:
+            pass
 
         weight = self.weight(key, value)  # type: ignore
 
         def set_():
             self.d[key] = value
-            self.i += 1
-            self.heap[key] = self.i
+            self.order[key] = None
             self.weights[key] = weight
             self.total_weight += weight
             # Evicting the last key/value pair is guaranteed to fail, so don't try.
             # This is because it is always the last one inserted by virtue of this
             # being an LRU, which in turn means we reached this point because
-            # weight > self.n and a callbacks raised exception (e.g. disk full).
+            # weight > self.n and a callback raised exception (e.g. disk full).
             while self.total_weight > self.n and len(self.d) > 1:
                 self.evict()
 
@@ -114,28 +113,30 @@ class LRU(ZictBase[KT, VT]):
 
         Returns
         -------
-        k: key
-        v: value
-        w: weight
+        Tuple of (key, value, weight)
         """
-        k, priority = self.heap.popitem()
-        v = self.d.pop(k)
+        try:
+            key = next(iter(self.order))
+        except StopIteration:
+            raise KeyError("evict(): dictionary is empty")
+        value = self.d.pop(key)
+
         try:
             for cb in self.on_evict:
-                cb(k, v)
+                cb(key, value)
         except Exception:
             # e.g. if a callback tried storing to disk and raised a disk full error
-            self.heap[k] = priority
-            self.d[k] = v
+            self.d[key] = value
             raise
 
-        weight = self.weights.pop(k)
+        del self.order[key]
+        weight = self.weights.pop(key)
         self.total_weight -= weight
-        return k, v, weight
+        return key, value, weight
 
     def __delitem__(self, key: KT) -> None:
         del self.d[key]
-        del self.heap[key]
+        del self.order[key]
         self.total_weight -= self.weights.pop(key)
 
     def keys(self) -> KeysView[KT]:

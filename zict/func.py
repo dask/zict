@@ -46,9 +46,8 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
         load: Callable[[WT], VT],
         d: MutableMapping[KT, WT],
     ):
-        # FIXME https://github.com/python/mypy/issues/708
-        self.dump = dump  # type: ignore
-        self.load = load  # type: ignore
+        self.dump = dump
+        self.load = load
         self.d = d
 
     def __getitem__(self, key: KT) -> VT:
