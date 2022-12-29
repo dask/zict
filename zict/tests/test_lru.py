@@ -5,7 +5,7 @@ from zict.tests import utils_test
 
 
 def test_simple():
-    d = dict()
+    d = {}
     lru = LRU(2, d)
 
     lru["x"] = 1
@@ -32,7 +32,7 @@ def test_simple():
 
 
 def test_str():
-    d = dict()
+    d = {}
     lru = LRU(2, d)
 
     lru["x"] = 1
@@ -58,7 +58,7 @@ def test_mapping():
 
 
 def test_overwrite():
-    d = dict()
+    d = {}
     lru = LRU(2, d)
 
     lru["x"] = 1
@@ -78,8 +78,8 @@ def test_callbacks():
     def cb(k, v):
         count[0] += 1
 
-    L = list()
-    d = dict()
+    L = []
+    d = {}
     lru = LRU(2, d, on_evict=[lambda k, v: L.append((k, v)), cb])
 
     lru["x"] = 1
@@ -126,7 +126,7 @@ def test_cb_exception_keep_on_lru():
     assert set(lru) == {"x", "y", "z"}
 
     assert lru.d == {"x": 1, "y": 2, "z": 3}
-    assert dict(lru.heap) == {"x": 1, "y": 2, "z": 3}
+    assert list(lru.order) == ["x", "y", "z"]
 
 
 def test_cb_exception_keep_on_lru_weights():
@@ -165,7 +165,7 @@ def test_cb_exception_keep_on_lru_weights():
     assert set(lru) == {"y"}
 
     assert lru.d == {"y": 3}
-    assert dict(lru.heap) == {"y": 2}
+    assert list(lru.order) == ["y"]
 
     with pytest.raises(MyError):
         # value is individually heavier than n
@@ -184,11 +184,11 @@ def test_cb_exception_keep_on_lru_weights():
     assert set(lru) == {"y", "z"}
 
     assert lru.d == {"y": 3, "z": 4}
-    assert dict(lru.heap) == {"y": 2, "z": 3}
+    assert list(lru.order) == ["y", "z"]
 
 
 def test_weight():
-    d = dict()
+    d = {}
     weight = lambda k, v: v
     lru = LRU(10, d, weight=weight)
 
@@ -211,7 +211,7 @@ def test_weight():
 
 
 def test_explicit_evict():
-    d = dict()
+    d = {}
     lru = LRU(10, d)
 
     lru["x"] = 1
@@ -224,3 +224,15 @@ def test_explicit_evict():
     assert k == "x"
     assert v == 1
     assert w == 1
+
+
+def test_init_not_empty():
+    lru1 = LRU(100, {}, weight=lambda k, v: v * 2)
+    lru1[1] = 10
+    lru1[2] = 20
+    lru1[3] = 30
+    lru2 = LRU(100, {1: 10, 2: 20, 3: 30}, weight=lambda k, v: v * 2)
+    assert lru1.d == lru2.d == {2: 20, 3: 30}
+    assert lru1.weights == lru2.weights == {2: 40, 3: 60}
+    assert lru1.total_weight == lru2.total_weight == 100
+    assert list(lru1.order) == list(lru2.order) == [2, 3]

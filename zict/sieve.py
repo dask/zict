@@ -47,8 +47,7 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
         selector: Callable[[KT, VT], MKT],
     ):
         self.mappings = mappings
-        # FIXME https://github.com/python/mypy/issues/708
-        self.selector = selector  # type: ignore
+        self.selector = selector
         self.key_to_mapping = {}
 
     def __getitem__(self, key: KT) -> VT:
