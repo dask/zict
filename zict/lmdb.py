@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pathlib
 import sys
 from collections.abc import Iterable, Iterator
 
@@ -21,7 +22,13 @@ class LMDB(ZictBase[str, bytes]):
 
     Parameters
     ----------
-    directory: string
+    directory: str
+    map_size: int
+        On Linux and MacOS, maximum size of the database file on disk.
+        Defaults to 1 TiB on 64 bit systems and 1 GiB on 32 bit ones.
+
+        On Windows, preallocated total size of the database file on disk. Defaults to
+        10 MiB to encourage explicitly setting it.
 
     Examples
     --------
@@ -31,21 +38,21 @@ class LMDB(ZictBase[str, bytes]):
     b'123'
     """
 
-    def __init__(self, directory: str):
+    def __init__(self, directory: str | pathlib.Path, map_size: int | None = None):
         import lmdb
 
-        # map_size is the maximum database size but shouldn't fill up the
-        # virtual address space
-        map_size = 1 << 40 if sys.maxsize >= 2**32 else 1 << 28
-        # writemap requires sparse file support otherwise the whole
-        # `map_size` may be reserved up front on disk
-        writemap = sys.platform.startswith("linux")
+        if map_size is None:
+            if sys.platform != "win32":
+                map_size = min(2**40, sys.maxsize // 4)
+            else:
+                map_size = 10 * 2**20
+
         self.db = lmdb.open(
-            directory,
+            str(directory),
             subdir=True,
             map_size=map_size,
             sync=False,
-            writemap=writemap,
+            writemap=True,
         )
 
     def __getitem__(self, key: str) -> bytes:
