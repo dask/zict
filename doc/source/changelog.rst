@@ -5,6 +5,9 @@ Changelog
 ------------------
 - ``File.__getitem__`` now returns bytearray instead of bytes. This prevents a memcpy
   when deserializing numpy arrays with dask. (:pr:`74`) `Guido Imperiale`_
+- Removed dependency from ``heapdict``; sped up ``LRU``. (:pr:`77`) `Guido Imperiale`_
+- Fixed broken ``LRU`` state when the underlying mapping starts non-empty.
+  (:pr:`77`) `Guido Imperiale`_
 - ``File`` and ``LMDB`` now support :class:`pathlib.Path` and pytest's ``tmpdir``.
   (:pr:`78`) `Guido Imperiale`_
 - ``LMDB`` now uses memory-mapped I/O on MacOSX and is usable on Windows.

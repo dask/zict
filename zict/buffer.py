@@ -68,8 +68,7 @@ class Buffer(ZictBase[KT, VT]):
         self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
         self.slow = slow
         self.n = n
-        # FIXME https://github.com/python/mypy/issues/708
-        self.weight = weight  # type: ignore
+        self.weight = weight
         if callable(fast_to_slow_callbacks):
             fast_to_slow_callbacks = [fast_to_slow_callbacks]
         if callable(slow_to_fast_callbacks):
