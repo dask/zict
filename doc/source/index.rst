@@ -26,7 +26,7 @@ zlib-compressed, directory of files.
 
    from zict import File, Func, LRU
 
-   a = File('myfile/', mode='a')
+   a = File('mydir/')
    b = Func(zlib.compress, zlib.decompress, a)
    c = Func(pickle.dumps, pickle.loads, b)
    d = LRU(100, c)
