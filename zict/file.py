@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import mmap
 import os
+import pathlib
 from collections.abc import Iterator
 from urllib.parse import quote, unquote
 
@@ -26,15 +27,18 @@ def _unsafe_key(key: str) -> str:
 class File(ZictBase[str, bytes]):
     """Mutable Mapping interface to a directory
 
-    Keys must be strings, values must be bytes
+    Keys must be strings, values must be buffers
 
     Note this shouldn't be used for interprocess persistence, as keys
     are cached in memory.
 
     Parameters
     ----------
-    directory: string
-    memmap: bool, use `mmap` for reading, defaults to `False`
+    directory: str
+        Directory to write to. If it already exists, existing files will be imported as
+        mapping elements. If it doesn't exists, it will be created.
+    memmap: bool (optional)
+        If True, use `mmap` for reading. Defaults to False.
 
     Examples
     --------
@@ -58,8 +62,8 @@ class File(ZictBase[str, bytes]):
     memmap: bool
     _keys: set[str]
 
-    def __init__(self, directory: str, memmap: bool = False):
-        self.directory = directory
+    def __init__(self, directory: str | pathlib.Path, memmap: bool = False):
+        self.directory = str(directory)
         self.memmap = memmap
         self._keys = set()
         if not os.path.exists(self.directory):
@@ -100,10 +104,9 @@ class File(ZictBase[str, bytes]):
         key: str,
         value: bytes
         | bytearray
-        | list[bytes]
-        | list[bytearray]
-        | tuple[bytes]
-        | tuple[bytearray],
+        | memoryview
+        | list[bytes | bytearray | memoryview]
+        | tuple[bytes | bytearray | memoryview, ...],
     ) -> None:
         fn = os.path.join(self.directory, _safe_key(key))
         with open(fn, "wb") as fh:
