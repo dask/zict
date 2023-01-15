@@ -27,7 +27,7 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
     >>> def halve(x):
     ...     return x / 2
 
-    >>> d = dict()
+    >>> d = {}
     >>> f = Func(double, halve, d)
     >>> f['x'] = 10
     >>> d
@@ -51,10 +51,10 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
         self.d = d
 
     def __getitem__(self, key: KT) -> VT:
-        return self.load(self.d[key])  # type: ignore
+        return self.load(self.d[key])
 
     def __setitem__(self, key: KT, value: VT) -> None:
-        self.d[key] = self.dump(value)  # type: ignore
+        self.d[key] = self.dump(value)
 
     def __contains__(self, key: object) -> bool:
         return key in self.d
@@ -67,13 +67,13 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
 
     # FIXME dictionary views https://github.com/dask/zict/issues/61
     def values(self) -> Iterator[VT]:  # type: ignore
-        return (self.load(v) for v in self.d.values())  # type: ignore
+        return (self.load(v) for v in self.d.values())
 
     def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
-        return ((k, self.load(v)) for k, v in self.d.items())  # type: ignore
+        return ((k, self.load(v)) for k, v in self.d.items())
 
     def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
-        it = ((k, self.dump(v)) for k, v in items)  # type: ignore
+        it = ((k, self.dump(v)) for k, v in items)
         self.d.update(it)
 
     def __iter__(self) -> Iterator[KT]:
@@ -94,7 +94,7 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
         close(self.d)
 
 
-def funcname(func) -> str:
+def funcname(func: Callable) -> str:
     """Get the name of a function."""
     while hasattr(func, "func"):
         func = func.func

@@ -3,7 +3,7 @@ from __future__ import annotations
 import zipfile
 from collections.abc import Iterator
 from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     # TODO: move to typing on Python 3.8+ and 3.10+ respectively
@@ -87,5 +87,5 @@ class Zip(MutableMapping[str, bytes]):
     def __enter__(self) -> Zip:
         return self
 
-    def __exit__(self, type, value, traceback) -> None:
+    def __exit__(self, *args: Any) -> None:
         self.close()

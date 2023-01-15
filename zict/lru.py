@@ -80,9 +80,9 @@ class LRU(ZictBase[KT, VT]):
         except KeyError:
             pass
 
-        weight = self.weight(key, value)  # type: ignore
+        weight = self.weight(key, value)
 
-        def set_():
+        def set_() -> None:
             self.d[key] = value
             self.order[key] = None
             self.weights[key] = weight

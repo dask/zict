@@ -38,23 +38,25 @@ zlib-compressed, directory of files.
 API
 ---
 
-.. autoclass:: zict.buffer.Buffer
+.. currentmodule:: zict
+
+.. autoclass:: Buffer
    :members:
-.. autoclass:: zict.cache.Cache
+.. autoclass:: Cache
    :members:
-.. autoclass:: zict.cache.WeakValueMapping
+.. autoclass:: WeakValueMapping
    :members:
-.. autoclass:: zict.file.File
+.. autoclass:: File
    :members:
-.. autoclass:: zict.func.Func
+.. autoclass:: Func
    :members:
-.. autoclass:: zict.lmdb.LMDB
+.. autoclass:: LMDB
    :members:
-.. autoclass:: zict.lru.LRU
+.. autoclass:: LRU
    :members:
-.. autoclass:: zict.sieve.Sieve
+.. autoclass:: Sieve
    :members:
-.. autoclass:: zict.zip.Zip
+.. autoclass:: Zip
    :members:
 
 

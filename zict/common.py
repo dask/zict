@@ -26,7 +26,7 @@ class ZictBase(MutableMapping[KT, VT]):
     def update(self, **kwargs: VT) -> None:
         ...
 
-    def update(*args, **kwds):
+    def update(*args, **kwargs):  # type: ignore[no-untyped-def]
         # Boilerplate for implementing an update() method
         if not args:
             raise TypeError(
@@ -44,8 +44,8 @@ class ZictBase(MutableMapping[KT, VT]):
             else:
                 # Assuming (key, value) pairs
                 items = other
-        if kwds:
-            items = chain(items, kwds.items())
+        if kwargs:
+            items = chain(items, kwargs.items())
         self._do_update(items)
 
     def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
@@ -59,7 +59,7 @@ class ZictBase(MutableMapping[KT, VT]):
     def __enter__(self: T) -> T:
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         self.close()
 
 

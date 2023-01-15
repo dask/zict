@@ -3,7 +3,7 @@ from collections import UserDict
 
 import pytest
 
-from zict.cache import Cache, WeakValueMapping
+from zict import Cache, WeakValueMapping
 
 
 def test_cache_get_set_del():
