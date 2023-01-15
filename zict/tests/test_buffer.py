@@ -1,13 +1,13 @@
 import pytest
 
-import zict
+from zict import Buffer
 from zict.tests import utils_test
 
 
 def test_simple():
-    a = dict()
-    b = dict()
-    buff = zict.Buffer(a, b, n=10, weight=lambda k, v: v)
+    a = {}
+    b = {}
+    buff = Buffer(a, b, n=10, weight=lambda k, v: v)
 
     buff["x"] = 1
     buff["y"] = 2
@@ -64,10 +64,9 @@ def test_simple():
 
 
 def test_setitem_avoid_fast_slow_duplicate():
-
-    a = dict()
-    b = dict()
-    buff = zict.Buffer(a, b, n=10, weight=lambda k, v: v)
+    a = {}
+    b = {}
+    buff = Buffer(a, b, n=10, weight=lambda k, v: v)
     for first, second in [(1, 12), (12, 1)]:
         buff["a"] = first
         assert buff["a"] == first
@@ -91,7 +90,7 @@ def test_mapping():
     """
     a = {}
     b = {}
-    buff = zict.Buffer(a, b, n=2)
+    buff = Buffer(a, b, n=2)
     utils_test.check_mapping(buff)
     utils_test.check_closing(buff)
 
@@ -107,9 +106,9 @@ def test_callbacks():
     def s2f_cb(k, v):
         s2f.append(k)
 
-    a = dict()
-    b = dict()
-    buff = zict.Buffer(
+    a = {}
+    b = {}
+    buff = Buffer(
         a,
         b,
         n=10,
@@ -158,7 +157,7 @@ def test_callbacks_exception_catch():
 
     a = {}
     b = {}
-    buff = zict.Buffer(
+    buff = Buffer(
         a,
         b,
         n=10,

@@ -34,7 +34,7 @@ class Buffer(ZictBase[KT, VT]):
 
     Examples
     --------
-    >>> fast = dict()
+    >>> fast = {}
     >>> slow = Func(dumps, loads, File('storage/'))  # doctest: +SKIP
     >>> def weight(k, v):
     ...     return sys.getsizeof(v)
@@ -90,7 +90,7 @@ class Buffer(ZictBase[KT, VT]):
     def slow_to_fast(self, key: KT) -> VT:
         value = self.slow[key]
         # Avoid useless movement for heavy values
-        w = self.weight(key, value)  # type: ignore
+        w = self.weight(key, value)
         if w <= self.n:
             del self.slow[key]
             self.fast[key] = value

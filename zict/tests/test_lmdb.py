@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from zict.lmdb import LMDB
+from zict import LMDB
 from zict.tests import utils_test
 
 pytest.importorskip("lmdb")

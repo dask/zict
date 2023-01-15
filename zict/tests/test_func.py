@@ -25,7 +25,7 @@ def rotr(x):
 
 
 def test_simple():
-    d = dict()
+    d = {}
     f = Func(inc, dec, d)
     f["x"] = 10
     assert f["x"] == 10

@@ -55,7 +55,7 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
 
     def __setitem__(self, key: KT, value: VT) -> None:
         old_mapping = self.key_to_mapping.get(key)
-        mkey = self.selector(key, value)  # type: ignore
+        mkey = self.selector(key, value)
         mapping = self.mappings[mkey]
         if old_mapping is not None and old_mapping is not mapping:
             del old_mapping[key]
@@ -73,7 +73,7 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
 
         for key, value in items:
             old_mapping = self.key_to_mapping.get(key)
-            mkey = self.selector(key, value)  # type: ignore
+            mkey = self.selector(key, value)
             mapping = self.mappings[mkey]
             if old_mapping is not None and old_mapping is not mapping:
                 del old_mapping[key]

@@ -3,7 +3,7 @@ import pathlib
 
 import pytest
 
-from zict.file import File
+from zict import File
 from zict.tests import utils_test
 
 
