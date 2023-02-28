@@ -57,7 +57,7 @@ def test_do_not_read_from_data():
 
     class D(UserDict):
         def __getitem__(self, key):
-            assert False
+            raise AssertionError()
 
     d = Cache(D({1: 10, 2: 20}), {})
     assert len(d) == 2
