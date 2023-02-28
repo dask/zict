@@ -10,7 +10,7 @@ def generate_random_strings(n, min_len, max_len):
     out = []
     chars = string.ascii_lowercase + string.digits
 
-    for i in range(n):
+    for _ in range(n):
         nchars = r.randint(min_len, max_len)
         s = "".join(r.choice(chars) for _ in range(nchars))
         out.append(s)
@@ -53,7 +53,7 @@ def stress_test_mapping_updates(z):
     assert sorted(z) == sorted(keys)
     assert sorted(z.items()) == sorted(zip(keys, values))
 
-    for i in range(3):
+    for _ in range(3):
         r.shuffle(keys)
         r.shuffle(values)
         for k, v in zip(keys, values):
