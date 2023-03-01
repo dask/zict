@@ -22,6 +22,11 @@ class Zip(MutableMapping[str, bytes]):
     filename: string
     mode: string, ('r', 'w', 'a'), defaults to 'a'
 
+    Notes
+    -----
+    None of this class is thread-safe - not even normally trivial methods such as
+    ``__len__ `` or ``__contains__``.
+
     Examples
     --------
     >>> z = Zip('myfile.zip')  # doctest: +SKIP

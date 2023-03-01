@@ -32,6 +32,11 @@ class Buffer(ZictBase[KT, VT]):
         These functions run every time data moves form the slow to the fast
         mapping.
 
+    Notes
+    -----
+    ``__contains__`` and ``__len__`` are thread-safe if the same methods on both
+    ``fast`` and ``slow`` are thread-safe. All other methods are not thread-safe.
+
     Examples
     --------
     >>> fast = {}
@@ -99,32 +104,30 @@ class Buffer(ZictBase[KT, VT]):
         return value
 
     def __getitem__(self, key: KT) -> VT:
-        if key in self.fast:
+        try:
             return self.fast[key]
-        elif key in self.slow:
+        except KeyError:
             return self.slow_to_fast(key)
-        else:
-            raise KeyError(key)
 
     def __setitem__(self, key: KT, value: VT) -> None:
-        if key in self.slow:
+        try:
             del self.slow[key]
+        except KeyError:
+            pass
         # This may trigger an eviction from fast to slow of older keys.
         # If the weight is individually greater than n, then key/value will be stored
         # into self.slow instead (see LRU.__setitem__).
         self.fast[key] = value
 
     def __delitem__(self, key: KT) -> None:
-        if key in self.fast:
+        try:
             del self.fast[key]
-        elif key in self.slow:
+        except KeyError:
             del self.slow[key]
-        else:
-            raise KeyError(key)
 
     # FIXME dictionary views https://github.com/dask/zict/issues/61
     def keys(self) -> Iterator[KT]:  # type: ignore
-        return chain(self.fast.keys(), self.slow.keys())
+        return iter(self)
 
     def values(self) -> Iterator[VT]:  # type: ignore
         return chain(self.fast.values(), self.slow.values())
@@ -136,7 +139,7 @@ class Buffer(ZictBase[KT, VT]):
         return len(self.fast) + len(self.slow)
 
     def __iter__(self) -> Iterator[KT]:
-        return chain(iter(self.fast), iter(self.slow))
+        return chain(self.fast, self.slow)
 
     def __contains__(self, key: object) -> bool:
         return key in self.fast or key in self.slow

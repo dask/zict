@@ -30,6 +30,11 @@ class LMDB(ZictBase[str, bytes]):
         On Windows, preallocated total size of the database file on disk. Defaults to
         10 MiB to encourage explicitly setting it.
 
+    Notes
+    -----
+    None of this class is thread-safe - not even normally trivial methods such as
+    ``__len__ `` or ``__contains__``.
+
     Examples
     --------
     >>> z = LMDB('/tmp/somedir/')  # doctest: +SKIP

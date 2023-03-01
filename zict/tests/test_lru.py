@@ -1,3 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import cpu_count
+
 import pytest
 
 from zict import LRU
@@ -236,3 +239,19 @@ def test_init_not_empty():
     assert lru1.weights == lru2.weights == {2: 40, 3: 60}
     assert lru1.total_weight == lru2.total_weight == 100
     assert list(lru1.order) == list(lru2.order) == [2, 3]
+
+
+def test_getitem_is_threasafe():
+    """Note: even if you maliciously tamper with LRU.__getitem__ to make it
+    thread-unsafe, this test fails only ~20% of the times on a 12-CPU desktop.
+    """
+    lru = LRU(100, {})
+    lru["x"] = 1
+
+    def f(_):
+        return lru["x"]
+
+    n = cpu_count()
+    with ThreadPoolExecutor(n) as ex:
+        for out in ex.map(f, range(100_000)):
+            assert out == 1

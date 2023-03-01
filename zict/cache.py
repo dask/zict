@@ -22,6 +22,14 @@ class Cache(ZictBase[KT, VT]):
         If True (default), the cache will be updated both when writing and reading.
         If False, update the cache when reading, but just invalidate it when writing.
 
+    Notes
+    -----
+    All methods are thread-safe if all methods on both ``data`` and ``cache`` are
+    thread-safe; however, only one thread can call ``__setitem__`` and ``__delitem__``
+    at any given time.
+    ``__contains__`` and ``__len__`` are thread-safe if the same methods on ``data`` are
+    thread-safe.
+
     Examples
     --------
     Keep the latest 100 accessed values in memory
@@ -60,14 +68,20 @@ class Cache(ZictBase[KT, VT]):
         # If the item was already in cache and data.__setitem__ fails, e.g. because it's
         # a File and the disk is full, make sure that the cache is invalidated.
         # FIXME https://github.com/python/mypy/issues/10152
-        self.cache.pop(key, None)  # type: ignore
+        try:
+            del self.cache[key]
+        except KeyError:
+            pass
 
         self.data[key] = value
         if self.update_on_set:
             self.cache[key] = value
 
     def __delitem__(self, key: KT) -> None:
-        self.cache.pop(key, None)  # type: ignore
+        try:
+            del self.cache[key]
+        except KeyError:
+            pass
         del self.data[key]
 
     def __len__(self) -> int:
