@@ -30,6 +30,11 @@ class LRU(ZictBase[KT, VT]):
         Function:: k, v -> number to determine the size of keeping the item in
         the mapping.  Defaults to ``(k, v) -> 1``
 
+    Notes
+    -----
+    All methods except ``__setitem__`` and :meth:`evict` are thread-safe if the same
+    methods on ``d`` are thread-safe.
+
     Examples
     --------
     >>> lru = LRU(2, {}, on_evict=lambda k, v: print("Lost", k, v))
@@ -70,7 +75,11 @@ class LRU(ZictBase[KT, VT]):
 
     def __getitem__(self, key: KT) -> VT:
         result = self.d[key]
-        del self.order[key]
+        try:
+            del self.order[key]
+        except KeyError:
+            # Race condition which can happen during multithreaded access
+            pass  # pragma: nocover
         self.order[key] = None
         return result
 
@@ -136,7 +145,12 @@ class LRU(ZictBase[KT, VT]):
 
     def __delitem__(self, key: KT) -> None:
         del self.d[key]
-        del self.order[key]
+        try:
+            del self.order[key]
+        except KeyError:
+            # Race condition which can happen during multithreaded access
+            pass  # pragma: nocover
+
         self.total_weight -= self.weights.pop(key)
 
     def keys(self) -> KeysView[KT]:

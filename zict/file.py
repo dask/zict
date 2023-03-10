@@ -40,6 +40,11 @@ class File(ZictBase[str, bytes]):
     memmap: bool (optional)
         If True, use `mmap` for reading. Defaults to False.
 
+    Notes
+    -----
+    ``__contains__`` and ``__len__`` are thread-safe.
+    All other methods are not thread-safe.
+
     Examples
     --------
     >>> z = File('myfile')  # doctest: +SKIP
@@ -127,10 +132,8 @@ class File(ZictBase[str, bytes]):
         return iter(self._keys)
 
     def __delitem__(self, key: str) -> None:
-        if key not in self._keys:
-            raise KeyError(key)
-        os.remove(os.path.join(self.directory, _safe_key(key)))
         self._keys.remove(key)
+        os.remove(os.path.join(self.directory, _safe_key(key)))
 
     def __len__(self) -> int:
         return len(self._keys)

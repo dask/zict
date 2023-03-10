@@ -15,7 +15,6 @@ to form intuitive interfaces over complex storage systems policies.
 
 Example
 -------
-
 In the following example we create an LRU dictionary backed by pickle-encoded,
 zlib-compressed, directory of files.
 
@@ -35,9 +34,13 @@ zlib-compressed, directory of files.
    >>> d['x']
    [1, 2, 3]
 
+Thread-safety
+-------------
+This library is only partially thread-safe. Refer to the documentation of the individual
+mappings for details.
+
 API
 ---
-
 .. currentmodule:: zict
 
 .. autoclass:: Buffer
@@ -62,5 +65,4 @@ API
 
 Changelog
 ---------
-
 Release notes can be found :doc:`here <changelog>`.
