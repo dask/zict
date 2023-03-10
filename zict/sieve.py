@@ -23,13 +23,19 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
     mappings: dict of {mapping key: MutableMapping}
     selector: callable (key, value) -> mapping key
 
+    Notes
+    -----
+    ``__contains__`` is thread-safe.
+    ``__len__`` is thread-safe if the same method on all mappings is thread-safe.
+    All other methods are not thread-safe.
+
     Examples
     --------
     >>> small = {}
     >>> large = DataBase()                        # doctest: +SKIP
     >>> mappings = {True: small, False: large}    # doctest: +SKIP
     >>> def is_small(key, value):                 # doctest: +SKIP
-            return sys.getsizeof(value) < 10000
+    ...     return sys.getsizeof(value) < 10000   # doctest: +SKIP
     >>> d = Sieve(mappings, is_small)             # doctest: +SKIP
 
     See Also
