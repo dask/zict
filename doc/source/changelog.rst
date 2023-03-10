@@ -3,6 +3,7 @@ Changelog
 
 2.3.0 - Unreleased
 ------------------
+- Dropped support for Python 3.7 (:pr:`84`) `Guido Imperiale`_
 - ``File.__getitem__`` now returns bytearray instead of bytes. This prevents a memcpy
   when deserializing numpy arrays with dask. (:pr:`74`) `Guido Imperiale`_
 - Removed dependency from ``heapdict``; sped up ``LRU``. (:pr:`77`) `Guido Imperiale`_

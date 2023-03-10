@@ -93,7 +93,7 @@ class Cache(ZictBase[KT, VT]):
 
 
 if TYPE_CHECKING:
-    # TODO Python 3.9: remove this branch and just use [] in the implementation below
+    # TODO remove this branch and just use [] in the implementation below (needs Python >=3.9)
     class WeakValueMapping(weakref.WeakValueDictionary[KT, VT]):
         ...
 

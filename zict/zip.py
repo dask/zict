@@ -3,13 +3,13 @@ from __future__ import annotations
 import zipfile
 from collections.abc import Iterator
 from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
-    # TODO: move to typing on Python 3.8+ and 3.10+ respectively
-    from typing_extensions import Literal, TypeAlias
+    # TODO: import from typing (needs Python >=3.10)
+    from typing_extensions import TypeAlias
 
-    FileMode: TypeAlias = Literal["r", "w", "x", "a"]
+FileMode: TypeAlias = Literal["r", "w", "x", "a"]
 
 
 class Zip(MutableMapping[str, bytes]):
