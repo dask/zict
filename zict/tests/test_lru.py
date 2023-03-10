@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import cpu_count
+from threading import Barrier
 
 import pytest
 
@@ -249,9 +249,11 @@ def test_getitem_is_threasafe():
     lru["x"] = 1
 
     def f(_):
-        return lru["x"]
+        barrier.wait()
+        for _ in range(5_000_000):
+            assert lru["x"] == 1
 
-    n = cpu_count()
-    with ThreadPoolExecutor(n) as ex:
-        for out in ex.map(f, range(100_000)):
-            assert out == 1
+    barrier = Barrier(2)
+    with ThreadPoolExecutor(2) as ex:
+        for _ in ex.map(f, range(2)):
+            pass
