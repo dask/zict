@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from collections.abc import (
     Callable,
     ItemsView,
@@ -61,9 +62,11 @@ class LRU(ZictBase[KT, VT]):
         | None = None,
         weight: Callable[[KT, VT], float] = lambda k, v: 1,
     ):
+        self._lock = threading.RLock()
         self.d = d
         self.n = n
-        self.order = dict.fromkeys(d)
+        with self._lock:
+            self.order = dict.fromkeys(d)
         if callable(on_evict):
             on_evict = [on_evict]
         self.on_evict = on_evict or []
@@ -75,12 +78,9 @@ class LRU(ZictBase[KT, VT]):
 
     def __getitem__(self, key: KT) -> VT:
         result = self.d[key]
-        try:
+        with self._lock:
             del self.order[key]
-        except KeyError:
-            # Race condition which can happen during multithreaded access
-            pass  # pragma: nocover
-        self.order[key] = None
+            self.order[key] = None
         return result
 
     def __setitem__(self, key: KT, value: VT) -> None:
@@ -93,7 +93,8 @@ class LRU(ZictBase[KT, VT]):
 
         def set_() -> None:
             self.d[key] = value
-            self.order[key] = None
+            with self._lock:
+                self.order[key] = None
             self.weights[key] = weight
             self.total_weight += weight
             # Evicting the last key/value pair is guaranteed to fail, so don't try.
@@ -138,18 +139,16 @@ class LRU(ZictBase[KT, VT]):
             self.d[key] = value
             raise
 
-        del self.order[key]
+        with self._lock:
+            del self.order[key]
         weight = self.weights.pop(key)
         self.total_weight -= weight
         return key, value, weight
 
     def __delitem__(self, key: KT) -> None:
         del self.d[key]
-        try:
+        with self._lock:
             del self.order[key]
-        except KeyError:
-            # Race condition which can happen during multithreaded access
-            pass  # pragma: nocover
 
         self.total_weight -= self.weights.pop(key)
 
