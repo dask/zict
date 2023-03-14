@@ -3,50 +3,29 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from itertools import chain
 from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
-from typing import Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar
 
-T = TypeVar("T")
 KT = TypeVar("KT")
 VT = TypeVar("VT")
+
+if TYPE_CHECKING:
+    # TODO import from typing (needs Python >=3.11)
+    from typing_extensions import Self
 
 
 class ZictBase(MutableMapping[KT, VT]):
     """Base class for zict mappings"""
 
-    # TODO use positional-only arguments to protect self (requires Python 3.8+)
-    @overload  # type: ignore[override]
-    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
-        ...
-
-    @overload
-    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
-        ...
-
-    @overload
-    def update(self, **kwargs: VT) -> None:
-        ...
-
-    def update(*args, **kwargs):  # type: ignore[no-untyped-def]
-        # Boilerplate for implementing an update() method
-        if not args:
-            raise TypeError(
-                "descriptor 'update' of MutableMapping object " "needs an argument"
-            )
-        self = args[0]
-        args = args[1:]
-        if len(args) > 1:
-            raise TypeError("update expected at most 1 arguments, got %d" % len(args))
-        items = []
-        if args:
-            other = args[0]
-            if isinstance(other, Mapping) or hasattr(other, "items"):
-                items = other.items()
-            else:
-                # Assuming (key, value) pairs
-                items = other
-        if kwargs:
-            items = chain(items, kwargs.items())
-        self._do_update(items)
+    def update(  # type: ignore[override]
+        self,
+        other: Mapping[KT, VT] | Iterable[tuple[KT, VT]] = (),
+        /,
+        **kwargs: VT,
+    ) -> None:
+        if hasattr(other, "items"):
+            other = other.items()
+        other = chain(other, kwargs.items())  # type: ignore
+        self._do_update(other)
 
     def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
         # Default implementation, can be overriden for speed
@@ -56,10 +35,13 @@ class ZictBase(MutableMapping[KT, VT]):
     def close(self) -> None:
         """Release any system resources held by this object"""
 
-    def __enter__(self: T) -> T:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: Any) -> None:
+        self.close()
+
+    def __del__(self) -> None:
         self.close()
 
 
