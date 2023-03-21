@@ -59,6 +59,8 @@ API
    :members:
 .. autoclass:: LRU
    :members:
+.. autoclass:: SharedMemory
+   :members:
 .. autoclass:: Sieve
    :members:
 .. autoclass:: Zip

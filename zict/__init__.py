@@ -6,6 +6,7 @@ from zict.file import File as File
 from zict.func import Func as Func
 from zict.lmdb import LMDB as LMDB
 from zict.lru import LRU as LRU
+from zict.shared_memory import SharedMemory as SharedMemory
 from zict.sieve import Sieve as Sieve
 from zict.utils import InsertionSortedSet as InsertionSortedSet
 from zict.zip import Zip as Zip
