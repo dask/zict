@@ -14,7 +14,7 @@ Changelog
 - ``LMDB`` now uses memory-mapped I/O on MacOSX and is usable on Windows.
   (:pr:`78`) `Guido Imperiale`_
 - The library is now partially thread-safe.
-  (:pr:`82`) `Guido Imperiale`_
+  (:pr:`82`, :pr:`90`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28

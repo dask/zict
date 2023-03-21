@@ -1,5 +1,8 @@
 import os
 import pathlib
+import time
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 
@@ -21,8 +24,8 @@ def test_implementation(tmpdir, dirtype):
     assert not z
 
     z["x"] = b"123"
-    assert os.listdir(tmpdir) == ["x"]
-    with open(tmpdir / "x", "rb") as f:
+    assert os.listdir(tmpdir) == ["x#0"]
+    with open(tmpdir / "x#0", "rb") as f:
         assert f.read() == b"123"
 
     assert "x" in z
@@ -38,7 +41,7 @@ def test_memmap_implementation(tmpdir):
     mv = memoryview(b"123")
     assert "x" not in z
     z["x"] = mv
-    assert os.listdir(tmpdir) == ["x"]
+    assert os.listdir(tmpdir) == ["x#0"]
     assert "x" in z
     mv2 = z["x"]
     assert mv2 == b"123"
@@ -62,7 +65,7 @@ def test_contextmanager(tmpdir):
     with File(tmpdir) as z:
         z["x"] = b"123"
 
-    with open(tmpdir / "x", "rb") as fh:
+    with open(tmpdir / "x#0", "rb") as fh:
         assert fh.read() == b"123"
 
 
@@ -70,9 +73,15 @@ def test_delitem(tmpdir):
     z = File(tmpdir)
 
     z["x"] = b"123"
-    assert os.listdir(tmpdir) == ["x"]
+    assert os.listdir(tmpdir) == ["x#0"]
     del z["x"]
     assert os.listdir(tmpdir) == []
+    # File name is never repeated
+    z["x"] = b"123"
+    assert os.listdir(tmpdir) == ["x#1"]
+    # __setitem__ deletes the previous file
+    z["x"] = b"123"
+    assert os.listdir(tmpdir) == ["x#2"]
 
 
 def test_missing_key(tmpdir):
@@ -116,3 +125,36 @@ def test_write_list_of_bytes(tmpdir):
 
     z["x"] = [b"123", b"4567"]
     assert z["x"] == b"1234567"
+
+
+def test_different_keys_threadsafe(tmpdir):
+    """File is fully thread-safe as long as different threads operate on different keys"""
+    z = File(tmpdir)
+    barrier = Barrier(2)
+
+    def worker(key, start):
+        barrier.wait()
+        t1 = time.perf_counter() + 2
+        i = start
+        while time.perf_counter() < t1:
+            payload = str(i).encode("ascii")
+            z[key] = payload
+            assert z[key] == payload
+            del z[key]
+
+            assert key not in z
+            with pytest.raises(KeyError):
+                _ = z[key]
+            with pytest.raises(KeyError):
+                del z[key]
+
+            i += 2
+        return i // 2
+
+    with ThreadPoolExecutor(2) as ex:
+        f1 = ex.submit(worker, "x", 0)
+        f2 = ex.submit(worker, "y", 1)
+        assert f1.result() > 100
+        assert f2.result() > 100
+
+    assert not z
