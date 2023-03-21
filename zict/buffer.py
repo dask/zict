@@ -20,17 +20,16 @@ class Buffer(ZictBase[KT, VT]):
     fast: MutableMapping
     slow: MutableMapping
     n: float
-        Total size of fast that triggers evictions to slow
+        Number of elements to keep, or total weight if ``weight`` is used.
     weight: f(k, v) -> float, optional
         Weight of each key/value pair (default: 1)
     fast_to_slow_callbacks: list of callables
         These functions run every time data moves from the fast to the slow
-        mapping.  They take two arguments, a key and a value
+        mapping. They take two arguments, a key and a value.
         If an exception occurs during a fast_to_slow_callbacks (e.g a callback tried
         storing to disk and raised a disk full error) the key will remain in the LRU.
     slow_to_fast_callbacks: list of callables
-        These functions run every time data moves form the slow to the fast
-        mapping.
+        These functions run every time data moves form the slow to the fast mapping.
 
     Notes
     -----
@@ -52,7 +51,6 @@ class Buffer(ZictBase[KT, VT]):
 
     fast: LRU[KT, VT]
     slow: MutableMapping[KT, VT]
-    n: float
     weight: Callable[[KT, VT], float]
     fast_to_slow_callbacks: list[Callable[[KT, VT], None]]
     slow_to_fast_callbacks: list[Callable[[KT, VT], None]]
@@ -72,7 +70,6 @@ class Buffer(ZictBase[KT, VT]):
     ):
         self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
         self.slow = slow
-        self.n = n
         self.weight = weight
         if callable(fast_to_slow_callbacks):
             fast_to_slow_callbacks = [fast_to_slow_callbacks]
@@ -80,6 +77,10 @@ class Buffer(ZictBase[KT, VT]):
             slow_to_fast_callbacks = [slow_to_fast_callbacks]
         self.fast_to_slow_callbacks = fast_to_slow_callbacks or []
         self.slow_to_fast_callbacks = slow_to_fast_callbacks or []
+
+    @property
+    def n(self) -> float:
+        return self.fast.n
 
     def fast_to_slow(self, key: KT, value: VT) -> None:
         self.slow[key] = value
@@ -118,6 +119,16 @@ class Buffer(ZictBase[KT, VT]):
         # If the weight is individually greater than n, then key/value will be stored
         # into self.slow instead (see LRU.__setitem__).
         self.fast[key] = value
+
+    def set_noevict(self, key: KT, value: VT) -> None:
+        """Variant of ``__setitem__`` that does not move keys from fast to slow if the
+        total weight exceeds n
+        """
+        try:
+            del self.slow[key]
+        except KeyError:
+            pass
+        self.fast.set_noevict(key, value)
 
     def __delitem__(self, key: KT) -> None:
         try:

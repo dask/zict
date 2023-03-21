@@ -193,3 +193,38 @@ def test_callbacks_exception_catch():
     assert s2f == []
     assert a == {"w": 11}
     assert b == {"x": 1, "y": 2, "z": 8}
+
+
+def test_set_noevict():
+    a = {}
+    b = {}
+    f2s = []
+    s2f = []
+    buff = Buffer(
+        a,
+        b,
+        n=5,
+        weight=lambda k, v: v,
+        fast_to_slow_callbacks=lambda k, v: f2s.append(k),
+        slow_to_fast_callbacks=lambda k, v: s2f.append(k),
+    )
+    buff.set_noevict("x", 3)
+    buff.set_noevict("y", 3)  # Would cause x to move to slow
+    buff.set_noevict("z", 6)  # >n; would be immediately evicted
+
+    assert a == {"x": 3, "y": 3, "z": 6}
+    assert b == {}
+    assert f2s == s2f == []
+
+    buff.fast.evict_until_below_capacity()
+    assert a == {"y": 3}
+    assert b == {"z": 6, "x": 3}
+    assert f2s == ["z", "x"]
+    assert s2f == []
+
+    # set_noevict clears slow
+    f2s.clear()
+    buff.set_noevict("x", 1)
+    assert a == {"y": 3, "x": 1}
+    assert b == {"z": 6}
+    assert f2s == s2f == []

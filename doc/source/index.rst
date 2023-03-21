@@ -43,11 +43,11 @@ API
 ---
 .. currentmodule:: zict
 
+**zict** defines the following MutableMappings:
+
 .. autoclass:: Buffer
    :members:
 .. autoclass:: Cache
-   :members:
-.. autoclass:: WeakValueMapping
    :members:
 .. autoclass:: File
    :members:
@@ -60,6 +60,15 @@ API
 .. autoclass:: Sieve
    :members:
 .. autoclass:: Zip
+   :members:
+
+Additionally, **zict** makes available the following general-purpose objects:
+
+.. autoclass:: Accumulator
+   :members:
+.. autoclass:: InsertionSortedSet
+   :members:
+.. autoclass:: WeakValueMapping
    :members:
 
 
