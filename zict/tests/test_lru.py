@@ -1,9 +1,11 @@
+from collections import UserDict
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
 
 from zict import LRU
+from zict.common import ZictBase
 from zict.tests import utils_test
 
 
@@ -213,32 +215,63 @@ def test_weight():
     assert d == {"y": 4}
 
 
+def test_noevict():
+    a = []
+    lru = LRU(100, {}, weight=lambda k, v: v, on_evict=lambda k, v: a.append(k))
+    lru.set_noevict("x", 70)
+    lru.set_noevict("y", 50)
+    lru.set_noevict("z", 110)
+    assert lru.total_weight == 70 + 50 + 110
+    assert lru.heavy == {"z"}
+    assert list(lru.order) == ["x", "y", "z"]
+    assert a == []
+
+    lru.evict_until_below_capacity()
+    assert dict(lru) == {"y": 50}
+    assert a == ["z", "x"]
+    assert lru.weights == {"y": 50}
+    assert lru.order == {"y"}
+    assert not lru.heavy
+
+
 def test_explicit_evict():
     d = {}
     lru = LRU(10, d)
 
     lru["x"] = 1
     lru["y"] = 2
+    lru["z"] = 3
 
-    assert set(d) == {"x", "y"}
+    assert set(d) == {"x", "y", "z"}
 
-    k, v, w = lru.evict()
+    assert lru.evict() == ("x", 1, 1)
+    assert set(d) == {"y", "z"}
+    assert lru.evict("z") == ("z", 3, 1)
     assert set(d) == {"y"}
-    assert k == "x"
-    assert v == 1
-    assert w == 1
+    assert lru.evict() == ("y", 2, 1)
+    with pytest.raises(KeyError, match=r"'evict\(\): dictionary is empty'"):
+        lru.evict()
+
+    # evict() with explicit key
+    lru["v"] = 4
+    lru["w"] = 5
+    assert lru.evict("w") == ("w", 5, 1)
+    with pytest.raises(KeyError, match="notexist"):
+        lru.evict("notexist")
 
 
 def test_init_not_empty():
     lru1 = LRU(100, {}, weight=lambda k, v: v * 2)
-    lru1[1] = 10
-    lru1[2] = 20
-    lru1[3] = 30
-    lru2 = LRU(100, {1: 10, 2: 20, 3: 30}, weight=lambda k, v: v * 2)
-    assert lru1.d == lru2.d == {2: 20, 3: 30}
-    assert lru1.weights == lru2.weights == {2: 40, 3: 60}
-    assert lru1.total_weight == lru2.total_weight == 100
-    assert list(lru1.order) == list(lru2.order) == [2, 3]
+    lru1.set_noevict(1, 10)
+    lru1.set_noevict(2, 20)
+    lru1.set_noevict(3, 30)
+    lru1.set_noevict(4, 60)
+    lru2 = LRU(100, {1: 10, 2: 20, 3: 30, 4: 60}, weight=lambda k, v: v * 2)
+    assert lru1.d == lru2.d == {1: 10, 2: 20, 3: 30, 4: 60}
+    assert lru1.weights == lru2.weights == {1: 20, 2: 40, 3: 60, 4: 120}
+    assert lru1.total_weight == lru2.total_weight == 240
+    assert list(lru1.order) == list(lru2.order) == [1, 2, 3, 4]
+    assert list(lru1.heavy) == list(lru2.heavy) == [4]
 
 
 def test_getitem_is_threasafe():
@@ -257,3 +290,43 @@ def test_getitem_is_threasafe():
     with ThreadPoolExecutor(2) as ex:
         for _ in ex.map(f, range(2)):
             pass
+
+
+def test_close_aborts_eviction():
+    evicted = []
+
+    def cb(k, v):
+        evicted.append(k)
+        if len(evicted) == 3:
+            lru.close()
+
+    lru = LRU(100, {}, weight=lambda k, v: v, on_evict=cb)
+    lru["a"] = 20
+    lru["b"] = 20
+    lru["c"] = 20
+    lru["d"] = 20
+    lru["e"] = 90  # Trigger eviction of a, b, c, d
+
+    assert lru.closed
+    assert evicted == ["a", "b", "c"]
+    assert dict(lru) == {"d": 20, "e": 90}
+
+
+def test_flush_close():
+    flushed = 0
+    closed = False
+
+    class D(ZictBase, UserDict):
+        def flush(self):
+            nonlocal flushed
+            flushed += 1
+
+        def close(self):
+            nonlocal closed
+            closed = True
+
+    with LRU(10, D()) as lru:
+        lru.flush()
+
+    assert flushed == 1
+    assert closed

@@ -1,5 +1,6 @@
 Changelog
 =========
+.. currentmodule:: zict
 
 2.3.0 - Unreleased
 ------------------
@@ -15,6 +16,9 @@ Changelog
   (:pr:`78`) `Guido Imperiale`_
 - The library is now partially thread-safe.
   (:pr:`82`, :pr:`90`) `Guido Imperiale`_
+- :class:`LRU` and :class:`Buffer` now support delayed eviction.
+  New objects :class:`Accumulator` and :class:`InsertionSortedSet`.
+  (:pr:`87`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28
