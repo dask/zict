@@ -9,7 +9,8 @@ from collections.abc import (
     ValuesView,
 )
 
-from zict.common import KT, VT, ZictBase, close, flush
+from zict.common import KT, VT, NoDefault, ZictBase, close, flush, nodefault
+from zict.utils import Accumulator, InsertionSortedSet
 
 
 class LRU(ZictBase[KT, VT]):
@@ -18,7 +19,7 @@ class LRU(ZictBase[KT, VT]):
     Parameters
     ----------
     n: int or float
-        Number of elements to keep, or total weight if weight= is used
+        Number of elements to keep, or total weight if ``weight`` is used.
     d: MutableMapping
         Dict-like in which to hold elements. There are no expectations on its internal
         ordering. Iteration on the LRU follows the order of the underlying mapping.
@@ -32,8 +33,13 @@ class LRU(ZictBase[KT, VT]):
 
     Notes
     -----
-    All methods except ``__setitem__`` and :meth:`evict` are thread-safe if the same
-    methods on ``d`` are thread-safe.
+    Most methods are thread-safe if the same methods on ``d`` are thread-safe.
+    ``__setitem__``, ``__delitem__``, :meth:`evict`, and
+    :meth:`evict_until_below_capacity` also require all callables in ``on_evict`` to be
+    thread-safe and should not be called from different threads for the same
+    key. It's OK to set/delete different keys from different threads, it's OK to set a
+    key in a thread and read it from many other threads, but it's not OK to set/delete
+    the same key from different threads at the same time.
 
     Examples
     --------
@@ -45,12 +51,14 @@ class LRU(ZictBase[KT, VT]):
     """
 
     d: MutableMapping[KT, VT]
-    order: dict[KT, None]  # This is used as an insertion-sorted set
+    order: InsertionSortedSet[KT]
+    heavy: InsertionSortedSet[KT]
     on_evict: list[Callable[[KT, VT], None]]
     weight: Callable[[KT, VT], float]
     n: float
-    total_weight: float
     weights: dict[KT, float]
+    closed: bool
+    total_weight: Accumulator
 
     def __init__(
         self,
@@ -63,59 +71,66 @@ class LRU(ZictBase[KT, VT]):
     ):
         self.d = d
         self.n = n
-        self.order = dict.fromkeys(d)
         if callable(on_evict):
             on_evict = [on_evict]
         self.on_evict = on_evict or []
         self.weight = weight
         self.weights = {k: weight(k, v) for k, v in d.items()}
-        self.total_weight = sum(self.weights.values())
-        while self.total_weight > n:
-            self.evict()
+        self.total_weight = Accumulator(sum(self.weights.values()))
+        self.order = InsertionSortedSet(d)
+        self.heavy = InsertionSortedSet(k for k, v in self.weights.items() if v >= n)
+        self.closed = False
 
     def __getitem__(self, key: KT) -> VT:
         result = self.d[key]
-        try:
-            del self.order[key]
-        except KeyError:
-            # Race condition which can happen during multithreaded access
-            pass  # pragma: nocover
-        self.order[key] = None
+        # Don't use .remove() to prevent race condition which can happen during
+        # multithreaded access
+        self.order.discard(key)
+        self.order.add(key)
         return result
 
     def __setitem__(self, key: KT, value: VT) -> None:
+        self.set_noevict(key, value)
+        try:
+            self.evict_until_below_capacity()
+        except Exception:
+            if self.weights[key] > self.n and key not in self.heavy:
+                # weight(value) > n and evicting the key we just inserted failed.
+                # Evict the rest of the LRU instead.
+                try:
+                    while len(self.d) > 1:
+                        self.evict()
+                except Exception:
+                    pass
+            raise
+
+    def set_noevict(self, key: KT, value: VT) -> None:
+        """Variant of ``__setitem__`` that does not evict if the total weight exceeds n.
+        Unlike ``__setitem__``, this method does not depend on the ``on_evict``
+        functions to be thread-safe for its own thread-safety. It also is not prone to
+        re-raising exceptions from the ``on_evict`` callbacks.
+        """
         try:
             del self[key]
         except KeyError:
             pass
 
         weight = self.weight(key, value)
+        self.d[key] = value
+        self.order.add(key)
+        if weight > self.n:
+            self.heavy.add(key)  # Mark this key to be evicted first
+        self.weights[key] = weight
+        self.total_weight += weight
 
-        def set_() -> None:
-            self.d[key] = value
-            self.order[key] = None
-            self.weights[key] = weight
-            self.total_weight += weight
-            # Evicting the last key/value pair is guaranteed to fail, so don't try.
-            # This is because it is always the last one inserted by virtue of this
-            # being an LRU, which in turn means we reached this point because
-            # weight > self.n and a callback raised exception (e.g. disk full).
-            while self.total_weight > self.n and len(self.d) > 1:
-                self.evict()
+    def evict_until_below_capacity(self) -> None:
+        """Evict key/value pairs until the total weight falls below n"""
+        while self.total_weight > self.n and not self.closed:
+            self.evict()
 
-        if weight <= self.n:
-            set_()
-        else:
-            try:
-                for cb in self.on_evict:
-                    cb(key, value)
-            except Exception:
-                # e.g. if a callback tried storing to disk and raised a disk full error
-                set_()
-                raise
-
-    def evict(self) -> tuple[KT, VT, float]:
-        """Evict least recently used key
+    def evict(self, key: KT | NoDefault = nodefault) -> tuple[KT, VT, float]:
+        """Evict least recently used key, or least recently inserted key with individual
+        weight > n, if any. You may also evict a specific key.
 
         This is typically called from internal use, but can be externally
         triggered as well.
@@ -124,33 +139,43 @@ class LRU(ZictBase[KT, VT]):
         -------
         Tuple of (key, value, weight)
         """
-        try:
-            key = next(iter(self.order))
-        except StopIteration:
-            raise KeyError("evict(): dictionary is empty")
-        value = self.d.pop(key)
+        # For the purpose of multithreaded access, it's important that the value remains
+        # in self.d until all callbacks are successful.
+        # When this is used inside a Buffer, there must never be a moment when the key
+        # is neither in fast nor in slow.
+        if key is nodefault:
+            while True:
+                try:
+                    key = next(iter(self.heavy or self.order))
+                    value = self.d[key]
+                    break
+                except StopIteration:
+                    raise KeyError("evict(): dictionary is empty")
+                except (KeyError, RuntimeError):  # pragma: nocover
+                    pass  # Race condition caused by multithreading
+        else:
+            value = self.d[key]
 
-        try:
-            for cb in self.on_evict:
-                cb(key, value)
-        except Exception:
-            # e.g. if a callback tried storing to disk and raised a disk full error
-            self.d[key] = value
-            raise
+        # If we are evicting a heavy key we just inserted and one of the callbacks
+        # fails, put it at the bottom of the LRU instead of the top. This way lighter
+        # keys will have a chance to be evicted first and make space.
+        self.heavy.discard(key)
 
-        del self.order[key]
+        # This may raise; e.g. if a callback tries storing to a full disk
+        for cb in self.on_evict:
+            cb(key, value)
+
+        self.d.pop(key, None)  # type: ignore[arg-type]
+        self.order.discard(key)
         weight = self.weights.pop(key)
         self.total_weight -= weight
+
         return key, value, weight
 
     def __delitem__(self, key: KT) -> None:
         del self.d[key]
-        try:
-            del self.order[key]
-        except KeyError:
-            # Race condition which can happen during multithreaded access
-            pass  # pragma: nocover
-
+        self.order.discard(key)
+        self.heavy.discard(key)
         self.total_weight -= self.weights.pop(key)
 
     def keys(self) -> KeysView[KT]:
@@ -181,4 +206,5 @@ class LRU(ZictBase[KT, VT]):
         flush(self.d)
 
     def close(self) -> None:
+        self.closed = True
         close(self.d)

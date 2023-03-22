@@ -1,16 +1,25 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from enum import Enum
 from itertools import chain
 from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
 from typing import TYPE_CHECKING, Any, TypeVar
 
+T = TypeVar("T")
 KT = TypeVar("KT")
 VT = TypeVar("VT")
 
 if TYPE_CHECKING:
     # TODO import from typing (needs Python >=3.11)
     from typing_extensions import Self
+
+
+class NoDefault(Enum):
+    nodefault = None
+
+
+nodefault = NoDefault.nodefault
 
 
 class ZictBase(MutableMapping[KT, VT]):

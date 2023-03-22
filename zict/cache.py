@@ -33,7 +33,7 @@ class Cache(ZictBase[KT, VT]):
     Examples
     --------
     Keep the latest 100 accessed values in memory
-    >>> from zict import File, LRU
+    >>> from zict import Cache, File, LRU, WeakValueMapping
     >>> d = Cache(File('myfile'), LRU(100, {}))  # doctest: +SKIP
 
     Read data from disk every time, unless it was previously accessed and it's still in
