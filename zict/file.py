@@ -3,25 +3,10 @@ from __future__ import annotations
 import mmap
 import os
 import pathlib
-from collections.abc import Iterator
+from collections.abc import Iterator, KeysView
 from urllib.parse import quote, unquote
 
 from zict.common import ZictBase
-
-
-def _safe_key(key: str) -> str:
-    """
-    Escape key so as to be usable on all filesystems.
-    """
-    # Even directory separators are unsafe.
-    return quote(key, safe="")
-
-
-def _unsafe_key(key: str) -> str:
-    """
-    Undo the escaping done by _safe_key().
-    """
-    return unquote(key)
 
 
 class File(ZictBase[str, bytes]):
@@ -42,8 +27,8 @@ class File(ZictBase[str, bytes]):
 
     Notes
     -----
-    ``__contains__`` and ``__len__`` are thread-safe.
-    All other methods are not thread-safe.
+    This class is fully thread-safe, with only one caveat: you can't have two calls to
+    ``__setitem__``, on the same key, at the same time from two different threads.
 
     Examples
     --------
@@ -65,17 +50,39 @@ class File(ZictBase[str, bytes]):
 
     directory: str
     memmap: bool
-    _keys: set[str]
+    filenames: dict[str, str]
+    _inc: int
 
     def __init__(self, directory: str | pathlib.Path, memmap: bool = False):
         self.directory = str(directory)
         self.memmap = memmap
-        self._keys = set()
+        self.filenames = {}
+        self._inc = 0
+
         if not os.path.exists(self.directory):
             os.makedirs(self.directory, exist_ok=True)
         else:
-            for n in os.listdir(self.directory):
-                self._keys.add(_unsafe_key(n))
+            for fn in os.listdir(self.directory):
+                self.filenames[self._unsafe_key(fn)] = fn
+                self._inc += 1
+
+    def _safe_key(self, key: str) -> str:
+        """Escape key so that it is usable on all filesystems.
+
+        Append to the filenames a unique suffix that changes every time this method is
+        called. This prevents race conditions when another thread accesses the same
+        key, e.g. ``__setitem__`` on one thread and ``__getitem__`` on another.
+        """
+        # `#` is escaped by quote and is supported by most file systems
+        key = quote(key, safe="") + f"#{self._inc}"
+        self._inc += 1
+        return key
+
+    @staticmethod
+    def _unsafe_key(key: str) -> str:
+        """Undo the escaping done by _safe_key()"""
+        key = key.split("#")[0]
+        return unquote(key)
 
     def __str__(self) -> str:
         return f"<File: {self.directory}, {len(self)} elements>"
@@ -83,9 +90,7 @@ class File(ZictBase[str, bytes]):
     __repr__ = __str__
 
     def __getitem__(self, key: str) -> bytearray | memoryview:
-        if key not in self._keys:
-            raise KeyError(key)
-        fn = os.path.join(self.directory, _safe_key(key))
+        fn = os.path.join(self.directory, self.filenames[key])
 
         # distributed.protocol.numpy.deserialize_numpy_ndarray makes sure that, if the
         # numpy array was writeable before serialization, remains writeable afterwards.
@@ -93,16 +98,21 @@ class File(ZictBase[str, bytes]):
         # read-only file descriptor), it performs an expensive memcpy.
         # Note that this is a dask-specific feature; vanilla pickle.loads will instead
         # return an array with flags.writeable=False.
-        if self.memmap:
-            with open(fn, "r+b") as fh:
-                return memoryview(mmap.mmap(fh.fileno(), 0))
-        else:
-            with open(fn, "rb") as fh:
-                size = os.fstat(fh.fileno()).st_size
-                buf = bytearray(size)
-                nread = fh.readinto(buf)
-                assert nread == size
-                return buf
+
+        try:
+            if self.memmap:
+                with open(fn, "r+b") as fh:
+                    return memoryview(mmap.mmap(fh.fileno(), 0))
+            else:
+                with open(fn, "rb") as fh:
+                    size = os.fstat(fh.fileno()).st_size
+                    buf = bytearray(size)
+                    nread = fh.readinto(buf)
+                    assert nread == size
+                    return buf
+
+        except FileNotFoundError:  # pragma: nocover
+            raise KeyError(key)  # Race condition with __setitem__ or __delitem__
 
     def __setitem__(
         self,
@@ -113,27 +123,34 @@ class File(ZictBase[str, bytes]):
         | list[bytes | bytearray | memoryview]
         | tuple[bytes | bytearray | memoryview, ...],
     ) -> None:
-        fn = os.path.join(self.directory, _safe_key(key))
-        with open(fn, "wb") as fh:
+        try:
+            del self[key]
+        except KeyError:
+            pass
+
+        fn = self._safe_key(key)
+        with open(os.path.join(self.directory, fn), "wb") as fh:
             if isinstance(value, (tuple, list)):
                 fh.writelines(value)
             else:
                 fh.write(value)
-        self._keys.add(key)
+        self.filenames[key] = fn
 
     def __contains__(self, key: object) -> bool:
-        return key in self._keys
+        return key in self.filenames
 
-    # FIXME dictionary views https://github.com/dask/zict/issues/61
-    def keys(self) -> set[str]:  # type: ignore
-        return self._keys
+    def keys(self) -> KeysView[str]:
+        return self.filenames.keys()
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self._keys)
+        return iter(self.filenames)
 
     def __delitem__(self, key: str) -> None:
-        self._keys.remove(key)
-        os.remove(os.path.join(self.directory, _safe_key(key)))
+        fn = self.filenames.pop(key)
+        try:
+            os.remove(os.path.join(self.directory, fn))
+        except FileNotFoundError:  # pragma: nocover
+            raise KeyError(key)  # Race condition with __setitem__ or __delitem__
 
     def __len__(self) -> int:
-        return len(self._keys)
+        return len(self.filenames)
