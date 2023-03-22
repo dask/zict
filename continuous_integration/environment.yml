@@ -1,0 +1,13 @@
+name: test
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pip
+  - psutil
+  - python-lmdb
+  - pytest
+  - pytest-faulthandler
+  - pytest-repeat
+  - pytest-rerunfailures
+  - pytest-timeout
