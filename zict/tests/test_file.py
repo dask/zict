@@ -10,22 +10,22 @@ from zict import File
 from zict.tests import utils_test
 
 
-def test_mapping(tmpdir):
+def test_mapping(tmp_path):
     """
     Test mapping interface for File().
     """
-    z = File(tmpdir)
+    z = File(tmp_path)
     utils_test.check_mapping(z)
 
 
 @pytest.mark.parametrize("dirtype", [str, pathlib.Path, lambda x: x])
-def test_implementation(tmpdir, dirtype):
-    z = File(dirtype(tmpdir))
+def test_implementation(tmp_path, dirtype):
+    z = File(dirtype(tmp_path))
     assert not z
 
     z["x"] = b"123"
-    assert os.listdir(tmpdir) == ["x#0"]
-    with open(tmpdir / "x#0", "rb") as f:
+    assert os.listdir(tmp_path) == ["x#0"]
+    with open(tmp_path / "x#0", "rb") as f:
         assert f.read() == b"123"
 
     assert "x" in z
@@ -34,14 +34,14 @@ def test_implementation(tmpdir, dirtype):
     assert out == b"123"
 
 
-def test_memmap_implementation(tmpdir):
-    z = File(tmpdir, memmap=True)
+def test_memmap_implementation(tmp_path):
+    z = File(tmp_path, memmap=True)
     assert not z
 
     mv = memoryview(b"123")
     assert "x" not in z
     z["x"] = mv
-    assert os.listdir(tmpdir) == ["x#0"]
+    assert os.listdir(tmp_path) == ["x#0"]
     assert "x" in z
     mv2 = z["x"]
     assert mv2 == b"123"
@@ -50,49 +50,49 @@ def test_memmap_implementation(tmpdir):
     assert mv2 == b"223"
 
 
-def test_str(tmpdir):
-    z = File(tmpdir)
-    assert str(z) == repr(z) == f"<File: {tmpdir}, 0 elements>"
+def test_str(tmp_path):
+    z = File(tmp_path)
+    assert str(z) == repr(z) == f"<File: {tmp_path}, 0 elements>"
 
 
-def test_setitem_typeerror(tmpdir):
-    z = File(tmpdir)
+def test_setitem_typeerror(tmp_path):
+    z = File(tmp_path)
     with pytest.raises(TypeError):
         z["x"] = 123
 
 
-def test_contextmanager(tmpdir):
-    with File(tmpdir) as z:
+def test_contextmanager(tmp_path):
+    with File(tmp_path) as z:
         z["x"] = b"123"
 
-    with open(tmpdir / "x#0", "rb") as fh:
+    with open(tmp_path / "x#0", "rb") as fh:
         assert fh.read() == b"123"
 
 
-def test_delitem(tmpdir):
-    z = File(tmpdir)
+def test_delitem(tmp_path):
+    z = File(tmp_path)
 
     z["x"] = b"123"
-    assert os.listdir(tmpdir) == ["x#0"]
+    assert os.listdir(tmp_path) == ["x#0"]
     del z["x"]
-    assert os.listdir(tmpdir) == []
+    assert os.listdir(tmp_path) == []
     # File name is never repeated
     z["x"] = b"123"
-    assert os.listdir(tmpdir) == ["x#1"]
+    assert os.listdir(tmp_path) == ["x#1"]
     # __setitem__ deletes the previous file
     z["x"] = b"123"
-    assert os.listdir(tmpdir) == ["x#2"]
+    assert os.listdir(tmp_path) == ["x#2"]
 
 
-def test_missing_key(tmpdir):
-    z = File(tmpdir)
+def test_missing_key(tmp_path):
+    z = File(tmp_path)
 
     with pytest.raises(KeyError):
         z["x"]
 
 
-def test_arbitrary_chars(tmpdir):
-    z = File(tmpdir)
+def test_arbitrary_chars(tmp_path):
+    z = File(tmp_path)
 
     # Avoid hitting the Windows max filename length
     chunk = 16
@@ -107,7 +107,7 @@ def test_arbitrary_chars(tmpdir):
         assert list(z.items()) == [(key, b"foo")]
         assert list(z.values()) == [b"foo"]
 
-        zz = File(tmpdir)
+        zz = File(tmp_path)
         assert zz[key] == b"foo"
         assert list(zz) == [key]
         assert list(zz.keys()) == [key]
@@ -120,16 +120,16 @@ def test_arbitrary_chars(tmpdir):
             z[key]
 
 
-def test_write_list_of_bytes(tmpdir):
-    z = File(tmpdir)
+def test_write_list_of_bytes(tmp_path):
+    z = File(tmp_path)
 
     z["x"] = [b"123", b"4567"]
     assert z["x"] == b"1234567"
 
 
-def test_different_keys_threadsafe(tmpdir):
+def test_different_keys_threadsafe(tmp_path):
     """File is fully thread-safe as long as different threads operate on different keys"""
-    z = File(tmpdir)
+    z = File(tmp_path)
     barrier = Barrier(2)
 
     def worker(key, start):
