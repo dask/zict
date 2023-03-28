@@ -3,6 +3,10 @@ from __future__ import annotations
 import pathlib
 import sys
 from collections.abc import Iterable, Iterator
+from typing import (  # TODO import from collections.abc (needs Python >=3.9)
+    ItemsView,
+    ValuesView,
+)
 
 from zict.common import ZictBase
 
@@ -77,18 +81,15 @@ class LMDB(ZictBase[str, bytes]):
         with self.db.begin() as txn:
             return txn.cursor().set_key(_encode_key(key))
 
-    # FIXME dictionary views https://github.com/dask/zict/issues/61
-    def items(self) -> Iterator[tuple[str, bytes]]:  # type: ignore
-        cursor = self.db.begin().cursor()
-        return ((_decode_key(k), v) for k, v in cursor.iternext(keys=True, values=True))
-
-    def keys(self) -> Iterator[str]:  # type: ignore
+    def __iter__(self) -> Iterator[str]:
         cursor = self.db.begin().cursor()
         return (_decode_key(k) for k in cursor.iternext(keys=True, values=False))
 
-    def values(self) -> Iterator[bytes]:  # type: ignore
-        cursor = self.db.begin().cursor()
-        return cursor.iternext(keys=False, values=True)
+    def items(self) -> ItemsView[str, bytes]:
+        return LMDBItemsView(self)
+
+    def values(self) -> ValuesView[bytes]:
+        return LMDBValuesView(self)
 
     def _do_update(self, items: Iterable[tuple[str, bytes]]) -> None:
         # Optimized version of update() using a single putmulti() call.
@@ -96,9 +97,6 @@ class LMDB(ZictBase[str, bytes]):
         with self.db.begin(write=True) as txn:
             consumed, added = txn.cursor().putmulti(items_enc)
             assert consumed == added == len(items_enc)
-
-    def __iter__(self) -> Iterator[str]:
-        return self.keys()
 
     def __delitem__(self, key: str) -> None:
         with self.db.begin(write=True) as txn:
@@ -110,3 +108,27 @@ class LMDB(ZictBase[str, bytes]):
 
     def close(self) -> None:
         self.db.close()
+
+
+class LMDBItemsView(ItemsView[str, bytes]):
+    _mapping: LMDB  # FIXME CPython implementation detail
+    __slots__ = ()
+
+    def __contains__(self, item: object) -> bool:
+        return any(item == v for v in self)
+
+    def __iter__(self) -> Iterator[tuple[str, bytes]]:
+        cursor = self._mapping.db.begin().cursor()
+        return ((_decode_key(k), v) for k, v in cursor.iternext(keys=True, values=True))
+
+
+class LMDBValuesView(ValuesView[bytes]):
+    _mapping: LMDB  # FIXME CPython implementation detail
+    __slots__ = ()
+
+    def __contains__(self, value: object) -> bool:
+        return any(value == v for v in self)
+
+    def __iter__(self) -> Iterator[bytes]:
+        cursor = self._mapping.db.begin().cursor()
+        return cursor.iternext(keys=False, values=True)

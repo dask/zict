@@ -1,22 +1,16 @@
-import os
+import os.path
 import zipfile
 from collections.abc import MutableMapping
 
 import pytest
 
 from zict import Zip
+from zict.tests import utils_test
 
 
 @pytest.fixture
-def fn():
-    filename = ".tmp.zip"
-    if os.path.exists(filename):
-        os.remove(filename)
-
-    yield filename
-
-    if os.path.exists(filename):
-        os.remove(filename)
+def fn(tmp_path):
+    yield os.path.join(tmp_path, "tmp.zip")
 
 
 def test_simple(fn):
@@ -83,3 +77,39 @@ def test_bytearray(fn):
 
     with Zip(fn) as z:
         assert z["x"] == b"123"
+
+
+def check_mapping(z):
+    """Shorter version of utils_test.check_mapping, as zip supports neither update nor
+    delete
+    """
+    assert isinstance(z, MutableMapping)
+    assert not z
+
+    assert list(z) == list(z.keys()) == []
+    assert list(z.values()) == []
+    assert list(z.items()) == []
+    assert len(z) == 0
+
+    z["abc"] = b"456"
+    z["xyz"] = b"12"
+    assert len(z) == 2
+    assert z["abc"] == b"456"
+
+    utils_test.check_items(z, [("abc", b"456"), ("xyz", b"12")])
+
+    assert "abc" in z
+    assert "xyz" in z
+    assert "def" not in z
+
+    with pytest.raises(KeyError):
+        z["def"]
+
+
+def test_mapping(fn):
+    """
+    Test mapping interface for Zip().
+    """
+    with Zip(fn) as z:
+        check_mapping(z)
+        utils_test.check_closing(z)

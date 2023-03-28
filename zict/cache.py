@@ -67,7 +67,6 @@ class Cache(ZictBase[KT, VT]):
     def __setitem__(self, key: KT, value: VT) -> None:
         # If the item was already in cache and data.__setitem__ fails, e.g. because it's
         # a File and the disk is full, make sure that the cache is invalidated.
-        # FIXME https://github.com/python/mypy/issues/10152
         try:
             del self.cache[key]
         except KeyError:

@@ -4,6 +4,7 @@ from collections import UserDict
 import pytest
 
 from zict import Cache, WeakValueMapping
+from zict.tests import utils_test
 
 
 def test_cache_get_set_del():
@@ -129,3 +130,12 @@ def test_weakvaluemapping():
     b = "bbb"
     d["b"] = b
     assert "b" not in d
+
+
+def test_mapping():
+    """
+    Test mapping interface for Cache().
+    """
+    buff = Cache({}, {})
+    utils_test.check_mapping(buff)
+    utils_test.check_closing(buff)

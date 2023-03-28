@@ -1,6 +1,6 @@
 import random
 import string
-from collections.abc import MutableMapping
+from collections.abc import ItemsView, KeysView, MutableMapping, ValuesView
 
 import pytest
 
@@ -33,6 +33,19 @@ def check_items(z, expected_items):
     assert list(z.keys()) == [k for k, v in items]
     assert list(z.values()) == [v for k, v in items]
     assert list(z) == [k for k, v in items]
+
+    # ItemsView, KeysView, ValuesView.__contains__()
+    assert isinstance(z.keys(), KeysView)
+    assert isinstance(z.values(), ValuesView)
+    assert isinstance(z.items(), ItemsView)
+    assert items[0] in z.items()
+    assert items[0][0] in z.keys()
+    assert items[0][0] in z
+    assert items[0][1] in z.values()
+    assert (object(), object()) not in z.items()
+    assert object() not in z.keys()
+    assert object() not in z
+    assert object() not in z.values()
 
 
 def stress_test_mapping_updates(z):
@@ -67,6 +80,8 @@ def stress_test_mapping_updates(z):
 
 
 def check_mapping(z):
+    assert type(z).__name__ in str(z)
+    assert type(z).__name__ in repr(z)
     assert isinstance(z, MutableMapping)
     assert not z
 
