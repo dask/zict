@@ -10,7 +10,7 @@ from zict.tests import utils_test
 
 @pytest.fixture
 def fn(tmp_path):
-    yield os.path.join(tmp_path, "tmp.zip")
+    yield str(tmp_path / "tmp.zip")
 
 
 def test_simple(fn):
