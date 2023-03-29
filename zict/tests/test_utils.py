@@ -81,20 +81,20 @@ def test_insertion_sorted_set():
     assert [s.pop() for _ in range(len(s))] == [7, 2, 0, 6, 4, 5, 1, 3]
 
 
-@pytest.mark.parametrize("method", ["popleft", "popright"])
-def test_insertion_sorted_set_threadsafe(method):
-    s = InsertionSortedSet(range(100_000))
+@pytest.mark.parametrize("method,size", [("popleft", 100_000), ("popright", 5_000_000)])
+def test_insertion_sorted_set_threadsafe(method, size):
+    s = InsertionSortedSet(range(size))
     m = getattr(s, method)
     barrier = Barrier(2)
 
     def t():
         barrier.wait()
         n = 0
-        prev = -1 if method == "popleft" else 100_000
+        prev = -1 if method == "popleft" else size
         while True:
             try:
                 v = m()
-                assert v > prev if method == "popleft" else v < prev
+                assert v > prev if method == "popleft" else v < prev, (v, prev, len(s))
                 prev = v
                 n += 1
             except KeyError:
