@@ -33,7 +33,7 @@ def test_simple():
     assert "y" not in lru
 
     lru["a"] = 5
-    assert set(lru.keys()) == {"z", "a"}
+    assert set(lru) == {"z", "a"}
 
 
 def test_str():

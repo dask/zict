@@ -115,7 +115,15 @@ class LMDBItemsView(ItemsView[str, bytes]):
     __slots__ = ()
 
     def __contains__(self, item: object) -> bool:
-        return any(item == v for v in self)
+        key: str
+        value: object
+        key, value = item  # type: ignore
+        try:
+            v = self._mapping[key]
+        except (KeyError, AttributeError):
+            return False
+        else:
+            return v == value
 
     def __iter__(self) -> Iterator[tuple[str, bytes]]:
         cursor = self._mapping.db.begin().cursor()

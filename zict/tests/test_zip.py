@@ -1,4 +1,3 @@
-import os.path
 import zipfile
 from collections.abc import MutableMapping
 
@@ -10,7 +9,7 @@ from zict.tests import utils_test
 
 @pytest.fixture
 def fn(tmp_path):
-    yield str(tmp_path / "tmp.zip")
+    yield tmp_path / "tmp.zip"
 
 
 def test_simple(fn):
