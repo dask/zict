@@ -59,20 +59,10 @@ class Zip(MutableMapping[str, bytes]):
     def __setitem__(self, key: str, value: bytes) -> None:
         self.file.writestr(key, value)
 
-    # FIXME dictionary views https://github.com/dask/zict/issues/61
-    def keys(self) -> Iterator[str]:  # type: ignore
+    def __iter__(self) -> Iterator[str]:
         return (zi.filename for zi in self.file.filelist)
 
-    def values(self) -> Iterator[bytes]:  # type: ignore
-        return (self.file.read(key) for key in self.keys())
-
-    def items(self) -> Iterator[tuple[str, bytes]]:  # type: ignore
-        return ((zi.filename, self.file.read(zi.filename)) for zi in self.file.filelist)
-
-    def __iter__(self) -> Iterator[str]:
-        return self.keys()
-
-    def __delitem__(self, key: str) -> None:
+    def __delitem__(self, key: str) -> None:  # pragma: nocover
         raise NotImplementedError("Not supported by stdlib zipfile")
 
     def __len__(self) -> int:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import mmap
 import os
 import pathlib
-from collections.abc import Iterator, KeysView
+from collections.abc import Iterator
 from urllib.parse import quote, unquote
 
 from zict.common import ZictBase
@@ -138,9 +138,6 @@ class File(ZictBase[str, bytes]):
 
     def __contains__(self, key: object) -> bool:
         return key in self.filenames
-
-    def keys(self) -> KeysView[str]:
-        return self.filenames.keys()
 
     def __iter__(self) -> Iterator[str]:
         return iter(self.filenames)

@@ -1,0 +1,17 @@
+[run]
+source =
+    zict
+omit =
+
+[report]
+show_missing = True
+exclude_lines =
+    # re-enable the standard pragma
+    pragma: nocover
+    pragma: no cover
+    # always ignore type checking blocks
+    TYPE_CHECKING
+    @overload
+
+[html]
+directory = coverage_html_report

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
-from itertools import chain
 from typing import Generic, TypeVar
 
 from zict.common import KT, VT, ZictBase, close, flush
@@ -92,21 +91,11 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
             for key, _ in mitems:
                 self.key_to_mapping[key] = mapping
 
-    # FIXME dictionary views https://github.com/dask/zict/issues/61
-    def keys(self) -> Iterator[KT]:  # type: ignore
-        return chain.from_iterable(self.mappings.values())
-
-    def values(self) -> Iterator[VT]:  # type: ignore
-        return chain.from_iterable(m.values() for m in self.mappings.values())
-
-    def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
-        return chain.from_iterable(m.items() for m in self.mappings.values())
-
     def __len__(self) -> int:
         return sum(map(len, self.mappings.values()))
 
     def __iter__(self) -> Iterator[KT]:
-        return self.keys()
+        return iter(self.key_to_mapping)
 
     def __contains__(self, key: object) -> bool:
         return key in self.key_to_mapping

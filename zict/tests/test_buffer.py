@@ -228,3 +228,17 @@ def test_set_noevict():
     assert a == {"y": 3, "x": 1}
     assert b == {"z": 6}
     assert f2s == s2f == []
+
+
+def test_evict_restore_during_iter():
+    """Test that __iter__ won't be disrupted if another thread evicts or restores a key"""
+    buff = Buffer({"x": 1, "y": 2}, {"z": 3}, n=5)
+    assert list(buff) == ["x", "y", "z"]
+    it = iter(buff)
+    assert next(it) == "x"
+    buff.fast.evict("x")
+    assert next(it) == "y"
+    assert buff["x"] == 1
+    assert next(it) == "z"
+    with pytest.raises(StopIteration):
+        next(it)

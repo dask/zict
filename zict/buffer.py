@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator, MutableMapping
 from itertools import chain
+from typing import (  # TODO import from collections.abc (needs Python >=3.9)
+    ItemsView,
+    ValuesView,
+)
 
 from zict.common import KT, VT, ZictBase, close, flush
 from zict.lru import LRU
@@ -136,21 +140,30 @@ class Buffer(ZictBase[KT, VT]):
         except KeyError:
             del self.slow[key]
 
-    # FIXME dictionary views https://github.com/dask/zict/issues/61
-    def keys(self) -> Iterator[KT]:  # type: ignore
-        return iter(self)
+    def values(self) -> ValuesView[VT]:
+        return BufferValuesView(self)
 
-    def values(self) -> Iterator[VT]:  # type: ignore
-        return chain(self.fast.values(), self.slow.values())
-
-    def items(self) -> Iterator[tuple[KT, VT]]:  # type: ignore
-        return chain(self.fast.items(), self.slow.items())
+    def items(self) -> ItemsView[KT, VT]:
+        return BufferItemsView(self)
 
     def __len__(self) -> int:
         return len(self.fast) + len(self.slow)
 
     def __iter__(self) -> Iterator[KT]:
-        return chain(self.fast, self.slow)
+        """Make sure that the iteration is not disrupted if you evict/restore a key in
+        the middle of it
+        """
+        seen = set()
+        while True:
+            try:
+                for d in (self.fast, self.slow):
+                    for key in d:
+                        if key not in seen:
+                            seen.add(key)
+                            yield key
+                return
+            except RuntimeError:
+                pass
 
     def __contains__(self, key: object) -> bool:
         return key in self.fast or key in self.slow
@@ -165,3 +178,25 @@ class Buffer(ZictBase[KT, VT]):
 
     def close(self) -> None:
         close(self.fast, self.slow)
+
+
+class BufferItemsView(ItemsView[KT, VT]):
+    _mapping: Buffer  # FIXME CPython implementation detail
+    __slots__ = ()
+
+    def __iter__(self) -> Iterator[tuple[KT, VT]]:
+        # Avoid changing the LRU
+        return chain(self._mapping.fast.items(), self._mapping.slow.items())
+
+
+class BufferValuesView(ValuesView[VT]):
+    _mapping: Buffer  # FIXME CPython implementation detail
+    __slots__ = ()
+
+    def __contains__(self, value: object) -> bool:
+        # Avoid changing the LRU
+        return any(value == v for v in self)
+
+    def __iter__(self) -> Iterator[VT]:
+        # Avoid changing the LRU
+        return chain(self._mapping.fast.values(), self._mapping.slow.values())

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import weakref
-from collections.abc import Iterator, KeysView, MutableMapping
+from collections.abc import Iterator, MutableMapping
 from typing import TYPE_CHECKING
 
 from zict.common import KT, VT, ZictBase, close, flush
@@ -67,7 +67,6 @@ class Cache(ZictBase[KT, VT]):
     def __setitem__(self, key: KT, value: VT) -> None:
         # If the item was already in cache and data.__setitem__ fails, e.g. because it's
         # a File and the disk is full, make sure that the cache is invalidated.
-        # FIXME https://github.com/python/mypy/issues/10152
         try:
             del self.cache[key]
         except KeyError:
@@ -93,11 +92,6 @@ class Cache(ZictBase[KT, VT]):
     def __contains__(self, key: object) -> bool:
         # Do not let MutableMapping call self.data[key]
         return key in self.data
-
-    def keys(self) -> KeysView[KT]:
-        # Return a potentially optimized set-like, instead of letting MutableMapping
-        # build it from __iter__ on the fly
-        return self.data.keys()
 
     def flush(self) -> None:
         flush(self.cache, self.data)
