@@ -8,7 +8,7 @@ from zict.tests import utils_test
 
 
 @pytest.fixture
-def fn(tmp_path):
+def fn(tmp_path, check_fd_leaks):
     yield tmp_path / "tmp.zip"
 
 
@@ -78,17 +78,21 @@ def test_bytearray(fn):
         assert z["x"] == b"123"
 
 
+def test_memoryview(fn):
+    data = memoryview(b"123")
+    with Zip(fn) as z:
+        z["x"] = data
+
+    with Zip(fn) as z:
+        assert z["x"] == b"123"
+
+
 def check_mapping(z):
     """Shorter version of utils_test.check_mapping, as zip supports neither update nor
     delete
     """
     assert isinstance(z, MutableMapping)
-    assert not z
-
-    assert list(z) == list(z.keys()) == []
-    assert list(z.values()) == []
-    assert list(z.items()) == []
-    assert len(z) == 0
+    utils_test.check_empty_mapping(z)
 
     z["abc"] = b"456"
     z["xyz"] = b"12"
@@ -112,3 +116,20 @@ def test_mapping(fn):
     with Zip(fn) as z:
         check_mapping(z)
         utils_test.check_closing(z)
+
+
+def test_no_delete_update(fn):
+    with Zip(fn) as z:
+        z["x"] = b"123"
+        with pytest.raises(NotImplementedError):
+            del z["x"]
+        with pytest.raises(NotImplementedError):
+            z["x"] = b"456"
+        assert len(z) == 1
+        assert z["x"] == b"123"
+
+
+def test_bad_types(fn):
+    with Zip(fn) as z:
+        utils_test.check_bad_key_types(z, has_del=False)
+        utils_test.check_bad_value_types(z)

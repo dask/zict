@@ -79,17 +79,24 @@ def stress_test_mapping_updates(z):
         check_items(z, list(zip(keys, values)))
 
 
+def check_empty_mapping(z):
+    assert not z
+    assert list(z) == list(z.keys()) == []
+    assert list(z.values()) == []
+    assert list(z.items()) == []
+    assert len(z) == 0
+    assert "x" not in z
+    assert "x" not in z.keys()
+    assert ("x", b"123") not in z.items()
+    assert b"123" not in z.values()
+
+
 def check_mapping(z):
     """See also test_zip.check_mapping"""
     assert type(z).__name__ in str(z)
     assert type(z).__name__ in repr(z)
     assert isinstance(z, MutableMapping)
-    assert not z
-
-    assert list(z) == list(z.keys()) == []
-    assert list(z.values()) == []
-    assert list(z.items()) == []
-    assert len(z) == 0
+    check_empty_mapping(z)
 
     z["abc"] = b"456"
     z["xyz"] = b"12"
@@ -101,6 +108,7 @@ def check_mapping(z):
     assert "abc" in z
     assert "xyz" in z
     assert "def" not in z
+    assert object() not in z
 
     with pytest.raises(KeyError):
         z["def"]
@@ -111,6 +119,18 @@ def check_mapping(z):
     check_items(z, [("abc", b"456"), ("xyz", b"654"), ("uvw", b"999")])
     z.update({"xyz": b"321"})
     check_items(z, [("abc", b"456"), ("xyz", b"321"), ("uvw", b"999")])
+    # Update with iterator (can read only once)
+    z.update(iter([("foo", b"132"), ("bar", b"887")]))
+    check_items(
+        z,
+        [
+            ("abc", b"456"),
+            ("xyz", b"321"),
+            ("uvw", b"999"),
+            ("foo", b"132"),
+            ("bar", b"887"),
+        ],
+    )
 
     del z["abc"]
     with pytest.raises(KeyError):
@@ -118,11 +138,11 @@ def check_mapping(z):
     with pytest.raises(KeyError):
         del z["abc"]
     assert "abc" not in z
-    assert set(z) == {"uvw", "xyz"}
-    assert len(z) == 2
+    assert set(z) == {"uvw", "xyz", "foo", "bar"}
+    assert len(z) == 4
 
     z["def"] = b"\x00\xff"
-    assert len(z) == 3
+    assert len(z) == 5
     assert z["def"] == b"\x00\xff"
     assert "def" in z
 
@@ -131,3 +151,39 @@ def check_mapping(z):
 
 def check_closing(z):
     z.close()
+
+
+def check_bad_key_types(z, has_del=True):
+    """z does not accept any Hashable as keys.
+    Test that it reacts correctly when confronted with an invalid key type.
+    """
+    bad = object()
+
+    assert bad not in z
+    assert bad not in z.keys()
+    assert (bad, b"123") not in z.items()
+
+    with pytest.raises(TypeError):
+        z[bad] = b"123"
+    with pytest.raises(TypeError):
+        z.update({bad: b"123"})
+    with pytest.raises(KeyError):
+        z[bad]
+    if has_del:
+        with pytest.raises(KeyError):
+            del z[bad]
+
+
+def check_bad_value_types(z):
+    """z does not accept any Python object as values.
+    Test that it reacts correctly when confronted with an invalid value type.
+    """
+    bad = object()
+
+    assert bad not in z.values()
+    assert ("x", bad) not in z.items()
+
+    with pytest.raises(TypeError):
+        z["x"] = bad
+    with pytest.raises(TypeError):
+        z.update({"x": bad})
