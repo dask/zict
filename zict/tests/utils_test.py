@@ -80,6 +80,7 @@ def stress_test_mapping_updates(z):
 
 
 def check_mapping(z):
+    """See also test_zip.check_mapping"""
     assert type(z).__name__ in str(z)
     assert type(z).__name__ in repr(z)
     assert isinstance(z, MutableMapping)
