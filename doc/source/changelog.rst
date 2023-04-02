@@ -14,10 +14,10 @@ Changelog
   (:pr:`78`) `Guido Imperiale`_
 - ``LMDB`` now uses memory-mapped I/O on MacOSX and is usable on Windows.
   (:pr:`78`) `Guido Imperiale`_
-- The library is now partially thread-safe.
-  (:pr:`82`, :pr:`90`, :pr:`93`) `Guido Imperiale`_
+- The library is now almost completely thread-safe.
+  (:pr:`82`, :pr:`90`, :pr:`92`, :pr:`93`) `Guido Imperiale`_
 - :class:`LRU` and :class:`Buffer` now support delayed eviction.
-  New objects :class:`Accumulator` and :class:`InsertionSortedSet`.
+  New object :class:`InsertionSortedSet`.
   (:pr:`87`) `Guido Imperiale`_
 - All mappings now return proper KeysView, ItemsView, and ValuesView objects from their
   keys(), items(), and values() methods (:pr:`93`) `Guido Imperiale`_

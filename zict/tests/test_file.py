@@ -1,8 +1,6 @@
 import os
 import pathlib
-import time
-from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
+import sys
 
 import pytest
 
@@ -127,34 +125,18 @@ def test_write_list_of_bytes(tmp_path):
     assert z["x"] == b"1234567"
 
 
-def test_different_keys_threadsafe(tmp_path):
-    """File is fully thread-safe as long as different threads operate on different keys"""
+@pytest.mark.stress
+@pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
+def test_stress_different_keys_threadsafe(tmp_path):
     z = File(tmp_path)
-    barrier = Barrier(2)
+    utils_test.check_different_keys_threadsafe(z)
+    utils_test.check_mapping(z)
 
-    def worker(key, start):
-        barrier.wait()
-        t1 = time.perf_counter() + 2
-        i = start
-        while time.perf_counter() < t1:
-            payload = str(i).encode("ascii")
-            z[key] = payload
-            assert z[key] == payload
-            del z[key]
 
-            assert key not in z
-            with pytest.raises(KeyError):
-                _ = z[key]
-            with pytest.raises(KeyError):
-                del z[key]
-
-            i += 2
-        return i // 2
-
-    with ThreadPoolExecutor(2) as ex:
-        f1 = ex.submit(worker, "x", 0)
-        f2 = ex.submit(worker, "y", 1)
-        assert f1.result() > 100
-        assert f2.result() > 100
-
-    assert not z
+@pytest.mark.stress
+@pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
+@pytest.mark.skipif(sys.platform == "win32", reason="Can't delete file with open fd")
+def test_stress_same_key_threadsafe(tmp_path):
+    z = File(tmp_path)
+    utils_test.check_same_key_threadsafe(z)
+    utils_test.check_mapping(z)

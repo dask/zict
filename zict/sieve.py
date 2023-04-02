@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
 from typing import Generic, TypeVar
 
-from zict.common import KT, VT, ZictBase, close, flush
+from zict.common import KT, VT, ZictBase, close, discard, flush, locked
 
 MKT = TypeVar("MKT")
 
@@ -24,9 +24,10 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
 
     Notes
     -----
-    ``__contains__`` is thread-safe.
-    ``__len__`` is thread-safe if the same method on all mappings is thread-safe.
-    All other methods are not thread-safe.
+    If you call methods of this class from multiple threads, access will be fast as long
+    as the ``__contains__`` and ``__delitem__`` methods of all underlying mappins are
+    fast. ``__getitem__`` and ``__setitem__`` methods of the underlying mappings are not
+    protected by locks.
 
     Examples
     --------
@@ -36,63 +37,83 @@ class Sieve(ZictBase[KT, VT], Generic[KT, VT, MKT]):
     >>> def is_small(key, value):                 # doctest: +SKIP
     ...     return sys.getsizeof(value) < 10000   # doctest: +SKIP
     >>> d = Sieve(mappings, is_small)             # doctest: +SKIP
-
-    See Also
-    --------
-    Buffer
     """
 
     mappings: Mapping[MKT, MutableMapping[KT, VT]]
     selector: Callable[[KT, VT], MKT]
     key_to_mapping: dict[KT, MutableMapping[KT, VT]]
+    gen: int
 
     def __init__(
         self,
         mappings: Mapping[MKT, MutableMapping[KT, VT]],
         selector: Callable[[KT, VT], MKT],
     ):
+        super().__init__()
         self.mappings = mappings
         self.selector = selector
         self.key_to_mapping = {}
+        self.gen = 0
 
     def __getitem__(self, key: KT) -> VT:
+        # Note that this may raise KeyError if you call it in the middle of __setitem__
+        # or update for an already existing key
         return self.key_to_mapping[key][key]
 
+    @locked
     def __setitem__(self, key: KT, value: VT) -> None:
-        old_mapping = self.key_to_mapping.get(key)
+        discard(self, key)
         mkey = self.selector(key, value)
         mapping = self.mappings[mkey]
-        if old_mapping is not None and old_mapping is not mapping:
-            del old_mapping[key]
-        mapping[key] = value
         self.key_to_mapping[key] = mapping
+        self.gen += 1
+        gen = self.gen
 
+        with self.unlock():
+            mapping[key] = value
+
+        if gen != self.gen and self.key_to_mapping.get(key) is not mapping:
+            # Multithreaded race condition
+            discard(mapping, key)
+
+    @locked
     def __delitem__(self, key: KT) -> None:
-        del self.key_to_mapping.pop(key)[key]
+        mapping = self.key_to_mapping.pop(key)
+        self.gen += 1
+        discard(mapping, key)
 
+    @locked
     def _do_update(self, items: Iterable[tuple[KT, VT]]) -> None:
         # Optimized update() implementation issuing a single update()
         # call per underlying mapping.
         updates = defaultdict(list)
-        mapping_ids = {id(m): m for m in self.mappings.values()}
+        self.gen += 1
+        gen = self.gen
 
         for key, value in items:
-            old_mapping = self.key_to_mapping.get(key)
+            old_mapping = self.key_to_mapping.pop(key, None)
+            if old_mapping is not None:
+                discard(old_mapping, key)
             mkey = self.selector(key, value)
             mapping = self.mappings[mkey]
-            if old_mapping is not None and old_mapping is not mapping:
-                del old_mapping[key]
-            # Can't hash a mutable mapping, so use its id() instead
-            updates[id(mapping)].append((key, value))
+            updates[mkey].append((key, value))
+            self.key_to_mapping[key] = mapping
 
-        for mid, mitems in updates.items():
-            mapping = mapping_ids[mid]
-            mapping.update(mitems)
-            for key, _ in mitems:
-                self.key_to_mapping[key] = mapping
+        with self.unlock():
+            for mkey, mitems in updates.items():
+                mapping = self.mappings[mkey]
+                mapping.update(mitems)
+
+        if gen != self.gen:
+            # Multithreaded race condition
+            for mkey, mitems in updates.items():
+                mapping = self.mappings[mkey]
+                for key, _ in mitems:
+                    if self.key_to_mapping.get(key) is not mapping:
+                        discard(mapping, key)
 
     def __len__(self) -> int:
-        return sum(map(len, self.mappings.values()))
+        return len(self.key_to_mapping)
 
     def __iter__(self) -> Iterator[KT]:
         return iter(self.key_to_mapping)

@@ -19,15 +19,6 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
         Function to call on value as we pull it from the mapping
     d: MutableMapping
 
-    Notes
-    -----
-    ``__contains__, ``__delitem__``, and ``__len__`` are thread-safe if the same methods
-    on ``d`` are thread-safe.
-    ``__setitem__`` and ``update`` are thread-safe if the same methods on ``d`` as well
-    ``dump`` are thread-safe.
-    ``__getitem__`` is thread-safe if both ``d.__getitem__`` and ``load`` are
-    thread-safe.
-
     Examples
     --------
     >>> def double(x):
@@ -55,6 +46,7 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
         load: Callable[[WT], VT],
         d: MutableMapping[KT, WT],
     ):
+        super().__init__()
         self.dump = dump
         self.load = load
         self.d = d

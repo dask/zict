@@ -6,7 +6,7 @@ import pathlib
 from collections.abc import Iterator
 from urllib.parse import quote, unquote
 
-from zict.common import ZictBase
+from zict.common import ZictBase, locked
 
 
 class File(ZictBase[str, bytes]):
@@ -27,8 +27,13 @@ class File(ZictBase[str, bytes]):
 
     Notes
     -----
-    This class is fully thread-safe, with only one caveat: you can't have two calls to
-    ``__setitem__``, on the same key, at the same time from two different threads.
+    If you call methods of this class from multiple threads, access will be fast as long
+    as atomic disk access such as ``open``, ``os.fstat``, and ``os.remove`` is fast.
+    This is not always the case, e.g. in case of slow network mounts or spun-down
+    magnetic drives.
+    Bytes read/write in the files is not protected by locks; this could cause failures
+    on Windows, NFS, and in general whenever it's not OK to delete a file while there
+    are file descriptors open on it.
 
     Examples
     --------
@@ -54,6 +59,7 @@ class File(ZictBase[str, bytes]):
     _inc: int
 
     def __init__(self, directory: str | pathlib.Path, memmap: bool = False):
+        super().__init__()
         self.directory = str(directory)
         self.memmap = memmap
         self.filenames = {}
@@ -89,6 +95,7 @@ class File(ZictBase[str, bytes]):
 
     __repr__ = __str__
 
+    @locked
     def __getitem__(self, key: str) -> bytearray | memoryview:
         fn = os.path.join(self.directory, self.filenames[key])
 
@@ -99,21 +106,19 @@ class File(ZictBase[str, bytes]):
         # Note that this is a dask-specific feature; vanilla pickle.loads will instead
         # return an array with flags.writeable=False.
 
-        try:
-            if self.memmap:
-                with open(fn, "r+b") as fh:
-                    return memoryview(mmap.mmap(fh.fileno(), 0))
-            else:
-                with open(fn, "rb") as fh:
-                    size = os.fstat(fh.fileno()).st_size
-                    buf = bytearray(size)
+        if self.memmap:
+            with open(fn, "r+b") as fh:
+                return memoryview(mmap.mmap(fh.fileno(), 0))
+        else:
+            with open(fn, "rb") as fh:
+                size = os.fstat(fh.fileno()).st_size
+                buf = bytearray(size)
+                with self.unlock():
                     nread = fh.readinto(buf)
-                    assert nread == size
-                    return buf
+                assert nread == size
+                return buf
 
-        except FileNotFoundError:  # pragma: nocover
-            raise KeyError(key)  # Race condition with __setitem__ or __delitem__
-
+    @locked
     def __setitem__(
         self,
         key: str,
@@ -123,13 +128,9 @@ class File(ZictBase[str, bytes]):
         | list[bytes | bytearray | memoryview]
         | tuple[bytes | bytearray | memoryview, ...],
     ) -> None:
-        try:
-            del self[key]
-        except KeyError:
-            pass
-
+        self.discard(key)
         fn = self._safe_key(key)
-        with open(os.path.join(self.directory, fn), "wb") as fh:
+        with open(os.path.join(self.directory, fn), "wb") as fh, self.unlock():
             if isinstance(value, (tuple, list)):
                 fh.writelines(value)
             else:
@@ -142,12 +143,10 @@ class File(ZictBase[str, bytes]):
     def __iter__(self) -> Iterator[str]:
         return iter(self.filenames)
 
+    @locked
     def __delitem__(self, key: str) -> None:
         fn = self.filenames.pop(key)
-        try:
-            os.remove(os.path.join(self.directory, fn))
-        except FileNotFoundError:  # pragma: nocover
-            raise KeyError(key)  # Race condition with __setitem__ or __delitem__
+        os.remove(os.path.join(self.directory, fn))
 
     def __len__(self) -> int:
         return len(self.filenames)

@@ -7,7 +7,7 @@ from typing import (  # TODO import from collections.abc (needs Python >=3.9)
     ValuesView,
 )
 
-from zict.common import KT, VT, ZictBase, close, flush
+from zict.common import KT, VT, ZictBase, close, discard, flush, locked
 from zict.lru import LRU
 
 
@@ -37,8 +37,10 @@ class Buffer(ZictBase[KT, VT]):
 
     Notes
     -----
-    ``__contains__`` and ``__len__`` are thread-safe if the same methods on both
-    ``fast`` and ``slow`` are thread-safe. All other methods are not thread-safe.
+    If you call methods of this class from multiple threads, access will be fast as long
+    as all methods of ``fast``, plus ``slow.__contains__`` and ``slow.__delitem__``, are
+    fast. ``slow.__getitem__``, ``slow.__setitem__`` and callbacks are not protected
+    by locks.
 
     Examples
     --------
@@ -58,6 +60,7 @@ class Buffer(ZictBase[KT, VT]):
     weight: Callable[[KT, VT], float]
     fast_to_slow_callbacks: list[Callable[[KT, VT], None]]
     slow_to_fast_callbacks: list[Callable[[KT, VT], None]]
+    _cancel_restore: dict[KT, bool]
 
     def __init__(
         self,
@@ -72,7 +75,14 @@ class Buffer(ZictBase[KT, VT]):
         | list[Callable[[KT, VT], None]]
         | None = None,
     ):
-        self.fast = LRU(n, fast, weight=weight, on_evict=[self.fast_to_slow])
+        super().__init__()
+        self.fast = LRU(
+            n,
+            fast,
+            weight=weight,
+            on_evict=[self.fast_to_slow],
+            on_cancel_evict=[self._cancel_evict],
+        )
         self.slow = slow
         self.weight = weight
         if callable(fast_to_slow_callbacks):
@@ -81,6 +91,7 @@ class Buffer(ZictBase[KT, VT]):
             slow_to_fast_callbacks = [slow_to_fast_callbacks]
         self.fast_to_slow_callbacks = fast_to_slow_callbacks or []
         self.slow_to_fast_callbacks = slow_to_fast_callbacks or []
+        self._cancel_restore = {}
 
     @property
     def n(self) -> float:
@@ -98,16 +109,38 @@ class Buffer(ZictBase[KT, VT]):
             raise
 
     def slow_to_fast(self, key: KT) -> VT:
-        value = self.slow[key]
+        self._cancel_restore[key] = False
+        try:
+            with self.unlock():
+                value = self.slow[key]
+            if self._cancel_restore[key]:
+                raise KeyError(key)
+        finally:
+            del self._cancel_restore[key]
+
         # Avoid useless movement for heavy values
         w = self.weight(key, value)
         if w <= self.n:
+            # Multithreaded edge case:
+            # - Thread 1 starts slow_to_fast(x) and puts it at the top of fast
+            # - This causes the eviction of older key(s)
+            # - While thread 1 is evicting older keys, thread 2 is loading fast with
+            #   set_noevict()
+            # - By the time the eviction of the older key(s) is done, there is
+            #   enough weight in fast that thread 1 will spill x
+            # - If the below code was just `self.fast[key] = value; del
+            #   self.slow[key]` now the key would be in neither slow nor fast!
+            self.fast.set_noevict(key, value)
             del self.slow[key]
-            self.fast[key] = value
-        for cb in self.slow_to_fast_callbacks:
-            cb(key, value)
+
+        with self.unlock():
+            self.fast.evict_until_below_target()
+            for cb in self.slow_to_fast_callbacks:
+                cb(key, value)
+
         return value
 
+    @locked
     def __getitem__(self, key: KT) -> VT:
         try:
             return self.fast[key]
@@ -115,30 +148,40 @@ class Buffer(ZictBase[KT, VT]):
             return self.slow_to_fast(key)
 
     def __setitem__(self, key: KT, value: VT) -> None:
-        try:
-            del self.slow[key]
-        except KeyError:
-            pass
-        # This may trigger an eviction from fast to slow of older keys.
-        # If the weight is individually greater than n, then key/value will be stored
-        # into self.slow instead (see LRU.__setitem__).
+        with self.lock:
+            discard(self.slow, key)
+            if key in self._cancel_restore:
+                self._cancel_restore[key] = True
         self.fast[key] = value
 
+    @locked
     def set_noevict(self, key: KT, value: VT) -> None:
         """Variant of ``__setitem__`` that does not move keys from fast to slow if the
         total weight exceeds n
         """
-        try:
-            del self.slow[key]
-        except KeyError:
-            pass
+        discard(self.slow, key)
+        if key in self._cancel_restore:
+            self._cancel_restore[key] = True
         self.fast.set_noevict(key, value)
 
+    def evict_until_below_target(self, n: float | None = None) -> None:
+        """Wrapper around :meth:`zict.LRU.evict_until_below_target`.
+        Presented here to allow easier overriding.
+        """
+        self.fast.evict_until_below_target(n)
+
+    @locked
     def __delitem__(self, key: KT) -> None:
+        if key in self._cancel_restore:
+            self._cancel_restore[key] = True
         try:
             del self.fast[key]
         except KeyError:
             del self.slow[key]
+
+    @locked
+    def _cancel_evict(self, key: KT, value: VT) -> None:
+        discard(self.slow, key)
 
     def values(self) -> ValuesView[VT]:
         return BufferValuesView(self)
@@ -147,7 +190,15 @@ class Buffer(ZictBase[KT, VT]):
         return BufferItemsView(self)
 
     def __len__(self) -> int:
-        return len(self.fast) + len(self.slow)
+        with self.lock, self.fast.lock:
+            return (
+                len(self.fast)
+                + len(self.slow)
+                - sum(
+                    k in self.fast and k in self.slow
+                    for k in chain(self._cancel_restore, self.fast._cancel_evict)
+                )
+            )
 
     def __iter__(self) -> Iterator[KT]:
         """Make sure that the iteration is not disrupted if you evict/restore a key in
