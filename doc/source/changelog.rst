@@ -21,6 +21,11 @@ Changelog
   (:pr:`87`) `Guido Imperiale`_
 - All mappings now return proper KeysView, ItemsView, and ValuesView objects from their
   keys(), items(), and values() methods (:pr:`93`) `Guido Imperiale`_
+- :class:`File`, :class:`LMDB`, and :class:`Zip` now behave coherently with unexpected
+  key/value types (:pr:`95`) `Guido Imperiale`_
+- ``Zip.__contains__`` no longer reads the value from disk (:pr:`95`) `Guido Imperiale`_
+- ``Zip.__setitem__`` will now raise when updating an already-existing key instead of
+  quietly corrupting the mapping (:pr:`95`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28
