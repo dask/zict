@@ -1,11 +1,11 @@
-from collections import UserDict
+import random
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
 
 import pytest
 
 from zict import LRU
-from zict.common import ZictBase
 from zict.tests import utils_test
 
 
@@ -60,6 +60,12 @@ def test_mapping():
     lru = LRU(100, d)
     utils_test.check_mapping(lru)
     utils_test.check_closing(lru)
+
+    lru.clear()
+    assert not lru.d
+    assert not lru.weights
+    assert not lru.total_weight
+    assert not lru._cancel_evict
 
 
 def test_overwrite():
@@ -215,7 +221,7 @@ def test_weight():
     assert d == {"y": 4}
 
 
-def test_noevict():
+def test_manual_eviction():
     a = []
     lru = LRU(100, {}, weight=lambda k, v: v, on_evict=lambda k, v: a.append(k))
     lru.set_noevict("x", 70)
@@ -226,12 +232,22 @@ def test_noevict():
     assert list(lru.order) == ["x", "y", "z"]
     assert a == []
 
-    lru.evict_until_below_capacity()
+    lru.evict_until_below_target()
     assert dict(lru) == {"y": 50}
     assert a == ["z", "x"]
     assert lru.weights == {"y": 50}
     assert lru.order == {"y"}
     assert not lru.heavy
+
+    lru.evict_until_below_target()  # No-op
+    assert dict(lru) == {"y": 50}
+    lru.evict_until_below_target(50)  # Custom target
+    assert dict(lru) == {"y": 50}
+    lru.evict_until_below_target(0)  # 0 != None
+    assert not lru
+    assert not lru.order
+    assert not lru.weights
+    assert a == ["z", "x", "y"]
 
 
 def test_explicit_evict():
@@ -274,24 +290,6 @@ def test_init_not_empty():
     assert list(lru1.heavy) == list(lru2.heavy) == [4]
 
 
-def test_getitem_is_threasafe():
-    """Note: even if you maliciously tamper with LRU.__getitem__ to make it
-    thread-unsafe, this test fails only ~20% of the times on a 12-CPU desktop.
-    """
-    lru = LRU(100, {})
-    lru["x"] = 1
-
-    def f(_):
-        barrier.wait()
-        for _ in range(5_000_000):
-            assert lru["x"] == 1
-
-    barrier = Barrier(2)
-    with ThreadPoolExecutor(2) as ex:
-        for _ in ex.map(f, range(2)):
-            pass
-
-
 def test_close_aborts_eviction():
     evicted = []
 
@@ -316,7 +314,7 @@ def test_flush_close():
     flushed = 0
     closed = False
 
-    class D(ZictBase, UserDict):
+    class D(utils_test.SimpleDict):
         def flush(self):
             nonlocal flushed
             flushed += 1
@@ -330,3 +328,92 @@ def test_flush_close():
 
     assert flushed == 1
     assert closed
+
+
+@pytest.mark.parametrize("event", ("set", "set_noevict", "del"))
+def test_cancel_evict(event):
+    """See also:
+
+    test_buffer.py::test_cancel_evict
+    test_buffer.py::test_cancel_restore
+    """
+    ev1 = threading.Event()
+    ev2 = threading.Event()
+    log = []
+
+    def cb(k, v):
+        ev1.set()
+        assert ev2.wait(timeout=5)
+
+    def cancel_cb(k, v):
+        log.append((k, v))
+
+    lru = LRU(100, {}, on_evict=cb, on_cancel_evict=cancel_cb, weight=lambda k, v: v)
+    lru.set_noevict("x", 1)
+    with ThreadPoolExecutor(1) as ex:
+        fut = ex.submit(lru.evict)
+        assert ev1.wait(timeout=5)
+        # cb is running
+
+        assert lru.evict() == (None, None, 0)
+        if event == "set":
+            lru["x"] = 2
+        elif event == "set_noevict":
+            lru.set_noevict("x", 2)
+        else:
+            assert event == "del"
+            del lru["x"]
+
+        ev2.set()
+        assert fut.result() == (None, None, 0)
+
+    assert log == [("x", 1)]
+    if event in ("set", "set_noevict"):
+        assert lru.d == {"x": 2}
+        assert lru.weights == {"x": 2}
+        assert list(lru.order) == ["x"]
+    else:
+        assert not lru.d
+        assert not lru.weights
+        assert not lru.order
+
+    assert not lru._cancel_evict
+
+
+def slow_cb(k, v):
+    time.sleep(0.01)
+
+
+@pytest.mark.stress
+@pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
+def test_stress_different_keys_threadsafe():
+    # Sometimes x and y can cohexist without triggering eviction
+    # Sometimes x and y are individually <n but when they're both in they cause eviction
+    # Sometimes x or y are heavy
+    lru = LRU(
+        1,
+        {},
+        weight=lambda k, v: random.choice([0.4, 0.9, 1.1]),
+        on_evict=slow_cb,
+        on_cancel_evict=slow_cb,
+    )
+    utils_test.check_different_keys_threadsafe(lru, allow_keyerror=True)
+    lru.n = 100
+    utils_test.check_mapping(lru)
+
+
+@pytest.mark.stress
+@pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
+def test_stress_same_key_threadsafe():
+    # Sometimes x is heavy
+    lru = LRU(
+        1,
+        {},
+        weight=lambda k, v: random.choice([0.9, 1.1]),
+        on_evict=slow_cb,
+        on_cancel_evict=slow_cb,
+    )
+
+    utils_test.check_same_key_threadsafe(lru)
+    lru.n = 100
+    utils_test.check_mapping(lru)

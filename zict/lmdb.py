@@ -50,6 +50,7 @@ class LMDB(ZictBase[str, bytes]):
     def __init__(self, directory: str | pathlib.Path, map_size: int | None = None):
         import lmdb
 
+        super().__init__()
         if map_size is None:
             if sys.platform != "win32":
                 map_size = min(2**40, sys.maxsize // 4)

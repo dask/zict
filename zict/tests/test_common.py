@@ -1,12 +1,15 @@
-from collections import UserDict
+import pickle
 
-from zict.common import ZictBase
+import pytest
+
+from zict.common import locked
+from zict.tests.utils_test import SimpleDict
 
 
 def test_close_on_del():
     closed = False
 
-    class D(ZictBase, UserDict):
+    class D(SimpleDict):
         def close(self):
             nonlocal closed
             closed = True
@@ -19,7 +22,7 @@ def test_close_on_del():
 def test_context():
     closed = False
 
-    class D(ZictBase, UserDict):
+    class D(SimpleDict):
         def close(self):
             nonlocal closed
             closed = True
@@ -33,7 +36,7 @@ def test_context():
 def test_update():
     items = []
 
-    class D(ZictBase, UserDict):
+    class D(SimpleDict):
         def _do_update(self, items_):
             nonlocal items
             items = items_
@@ -51,3 +54,55 @@ def test_update():
     # Special kwargs can't overwrite positional-only parameters
     d.update(self=1, other=2)
     assert list(items) == [("self", 1), ("other", 2)]
+
+
+def test_discard():
+    class D(SimpleDict):
+        def __getitem__(self, key):
+            raise AssertionError()
+
+    d = D()
+    d["x"] = 1
+    d["z"] = 2
+    d.discard("x")
+    d.discard("y")
+    assert d.data == {"z": 2}
+
+
+def test_pickle():
+    d = SimpleDict()
+    d["x"] = 1
+    d2 = pickle.loads(pickle.dumps(d))
+    assert d2.data == {"x": 1}
+
+
+def test_lock(is_locked):
+    class CustomError(Exception):
+        pass
+
+    class D(SimpleDict):
+        @locked
+        def f(self, crash):
+            assert is_locked(self)
+            with self.unlock():
+                assert not is_locked(self)
+            assert is_locked(self)
+
+            # context manager re-acquires the lock on failure
+            with pytest.raises(CustomError):
+                with self.unlock():
+                    raise CustomError()
+            assert is_locked(self)
+
+            if crash:
+                raise CustomError()
+
+    d = D()
+    assert not is_locked(d)
+    d.f(crash=False)
+    assert not is_locked(d)
+
+    # decorator releases the lock on failure
+    with pytest.raises(CustomError):
+        d.f(crash=True)
+    assert not is_locked(d)

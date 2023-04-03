@@ -1,3 +1,8 @@
+import random
+import threading
+from collections import UserDict
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from zict import Buffer
@@ -94,6 +99,15 @@ def test_mapping():
     utils_test.check_mapping(buff)
     utils_test.check_closing(buff)
 
+    buff.clear()
+    assert not buff.slow
+    assert not buff._cancel_restore
+    assert not buff.fast
+    assert not buff.fast.d
+    assert not buff.fast.weights
+    assert not buff.fast.total_weight
+    assert not buff.fast._cancel_evict
+
 
 def test_callbacks():
     f2s = []
@@ -185,7 +199,7 @@ def test_callbacks_exception_catch():
     assert b == {"x": 1}
 
     # Add key > n, again total weight > n this will move everything to slow except w
-    # that stays in fast due after callback raise
+    # that stays in fast due to callback raising
     with pytest.raises(MyError):
         buff["w"] = 11
 
@@ -216,7 +230,7 @@ def test_set_noevict():
     assert b == {}
     assert f2s == s2f == []
 
-    buff.fast.evict_until_below_capacity()
+    buff.evict_until_below_target()
     assert a == {"y": 3}
     assert b == {"z": 6, "x": 3}
     assert f2s == ["z", "x"]
@@ -228,6 +242,13 @@ def test_set_noevict():
     assert a == {"y": 3, "x": 1}
     assert b == {"z": 6}
     assert f2s == s2f == []
+
+    # Custom target; 0 != None
+    buff.evict_until_below_target(0)
+    assert a == {}
+    assert b == {"z": 6, "x": 1, "y": 3}
+    assert f2s == ["y", "x"]
+    assert s2f == []
 
 
 def test_evict_restore_during_iter():
@@ -242,3 +263,150 @@ def test_evict_restore_during_iter():
     assert next(it) == "z"
     with pytest.raises(StopIteration):
         next(it)
+
+
+@pytest.mark.parametrize("event", ("set", "set_noevict", "del"))
+@pytest.mark.parametrize("when", ("before", "after"))
+def test_cancel_evict(event, when):
+    """See also:
+
+    test_cancel_restore
+    test_lru.py::test_cancel_evict
+    """
+    ev1 = threading.Event()
+    ev2 = threading.Event()
+
+    class Slow(UserDict):
+        def __setitem__(self, k, v):
+            if when == "before":
+                ev1.set()
+                assert ev2.wait(timeout=5)
+                super().__setitem__(k, v)
+            else:
+                super().__setitem__(k, v)
+                ev1.set()
+                assert ev2.wait(timeout=5)
+
+    buff = Buffer({}, Slow(), n=100, weight=lambda k, v: v)
+    buff.set_noevict("x", 1)
+    with ThreadPoolExecutor(1) as ex:
+        fut = ex.submit(buff.fast.evict)
+        assert ev1.wait(timeout=5)
+        # cb is running
+
+        if event == "set":
+            buff["x"] = 2
+        elif event == "set_noevict":
+            buff.set_noevict("x", 2)
+        else:
+            assert event == "del"
+            del buff["x"]
+        ev2.set()
+        assert fut.result() == (None, None, 0)
+
+    if event in ("set", "set_noevict"):
+        assert buff.fast == {"x": 2}
+        assert not buff.slow
+        assert buff.fast.weights == {"x": 2}
+        assert list(buff.fast.order) == ["x"]
+    else:
+        assert not buff.fast
+        assert not buff.slow
+        assert not buff.fast.weights
+        assert not buff.fast.order
+
+    assert not buff.fast._cancel_evict
+
+
+@pytest.mark.parametrize("event", ("set", "set_noevict", "del"))
+@pytest.mark.parametrize("when", ("before", "after"))
+def test_cancel_restore(event, when):
+    """See also:
+
+    test_cancel_evict
+    test_lru.py::test_cancel_evict
+    """
+    ev1 = threading.Event()
+    ev2 = threading.Event()
+
+    class Slow(UserDict):
+        def __getitem__(self, k):
+            if when == "before":
+                ev1.set()
+                assert ev2.wait(timeout=5)
+                return super().__getitem__(k)
+            else:
+                out = super().__getitem__(k)
+                ev1.set()
+                assert ev2.wait(timeout=5)
+                return out
+
+    buff = Buffer({}, Slow(), n=100, weight=lambda k, v: v)
+    buff.set_noevict("x", 1)
+    buff.fast.evict()
+    assert not buff.fast
+    assert set(buff.slow) == {"x"}
+
+    with ThreadPoolExecutor(1) as ex:
+        fut = ex.submit(buff.__getitem__, "x")
+        assert ev1.wait(timeout=5)
+        # cb is running
+
+        if event == "set":
+            buff["x"] = 2
+        elif event == "set_noevict":
+            buff.set_noevict("x", 2)
+        else:
+            assert event == "del"
+            del buff["x"]
+        ev2.set()
+
+        with pytest.raises(KeyError, match="x"):
+            fut.result()
+
+    if event in ("set", "set_noevict"):
+        assert buff.fast == {"x": 2}
+        assert not buff.slow
+        assert buff.fast.weights == {"x": 2}
+        assert list(buff.fast.order) == ["x"]
+    else:
+        assert not buff.fast
+        assert not buff.slow
+        assert not buff.fast.weights
+        assert not buff.fast.order
+
+    assert not buff._cancel_restore
+
+
+@pytest.mark.stress
+@pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
+def test_stress_different_keys_threadsafe():
+    # Sometimes x and y can cohexist without triggering eviction
+    # Sometimes x and y are individually <n but when they're both in they cause eviction
+    # Sometimes x or y are heavy
+    buff = Buffer(
+        {},
+        utils_test.SlowDict(0.001),
+        n=1,
+        weight=lambda k, v: random.choice([0.4, 0.9, 1.1]),
+    )
+    utils_test.check_different_keys_threadsafe(buff)
+    assert not buff.fast
+    assert not buff.slow
+    utils_test.check_mapping(buff)
+
+
+@pytest.mark.stress
+@pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
+def test_stress_same_key_threadsafe():
+    # Sometimes x is heavy
+    buff = Buffer(
+        {},
+        utils_test.SlowDict(0.001),
+        n=1,
+        weight=lambda k, v: random.choice([0.9, 1.1]),
+    )
+    utils_test.check_same_key_threadsafe(buff)
+    assert not buff.fast
+    assert not buff.slow
+    utils_test.check_mapping(buff)

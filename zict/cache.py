@@ -4,7 +4,7 @@ import weakref
 from collections.abc import Iterator, MutableMapping
 from typing import TYPE_CHECKING
 
-from zict.common import KT, VT, ZictBase, close, flush
+from zict.common import KT, VT, ZictBase, close, discard, flush, locked
 
 
 class Cache(ZictBase[KT, VT]):
@@ -24,11 +24,9 @@ class Cache(ZictBase[KT, VT]):
 
     Notes
     -----
-    All methods are thread-safe if all methods on both ``data`` and ``cache`` are
-    thread-safe; however, only one thread can call ``__setitem__`` and ``__delitem__``
-    at any given time.
-    ``__contains__`` and ``__len__`` are thread-safe if the same methods on ``data`` are
-    thread-safe.
+    If you call methods of this class from multiple threads, access will be fast as long
+    as all methods of ``cache``, plus ``data.__delitem__``, are fast. Other methods of
+    ``data`` are not protected by locks.
 
     Examples
     --------
@@ -44,6 +42,8 @@ class Cache(ZictBase[KT, VT]):
     data: MutableMapping[KT, VT]
     cache: MutableMapping[KT, VT]
     update_on_set: bool
+    _gen: int
+    _last_updated: dict[KT, int]
 
     def __init__(
         self,
@@ -51,37 +51,66 @@ class Cache(ZictBase[KT, VT]):
         cache: MutableMapping[KT, VT],
         update_on_set: bool = True,
     ):
+        super().__init__()
         self.data = data
         self.cache = cache
         self.update_on_set = update_on_set
+        self._gen = 0
+        self._last_updated = {}
 
+    @locked
     def __getitem__(self, key: KT) -> VT:
         try:
             return self.cache[key]
         except KeyError:
             pass
-        value = self.data[key]
-        self.cache[key] = value
+        gen = self._last_updated[key]
+
+        with self.unlock():
+            value = self.data[key]
+
+        # Could another thread have called __setitem__ or __delitem__ on the
+        # same key in the meantime? If not, update the cache
+        if gen == self._last_updated.get(key):
+            self.cache[key] = value
+            self._last_updated[key] += 1
         return value
 
+    @locked
     def __setitem__(self, key: KT, value: VT) -> None:
-        # If the item was already in cache and data.__setitem__ fails, e.g. because it's
-        # a File and the disk is full, make sure that the cache is invalidated.
-        try:
-            del self.cache[key]
-        except KeyError:
-            pass
+        # If the item was already in cache and data.__setitem__ fails, e.g. because
+        # it's a File and the disk is full, make sure that the cache is invalidated.
+        discard(self.cache, key)
+        gen = self._gen
+        gen += 1
+        self._last_updated[key] = self._gen = gen
 
-        self.data[key] = value
-        if self.update_on_set:
-            self.cache[key] = value
+        with self.unlock():
+            self.data[key] = value
 
+        if key not in self._last_updated:
+            # Another thread called __delitem__ in the meantime
+            discard(self.data, key)
+        elif gen != self._last_updated[key]:
+            # Another thread called __setitem__ in the meantime. We have no idea which
+            # of the two ended up actually setting self.data.
+            # Case 1: the other thread did not enter this locked code block yet.
+            #         Prevent it from setting the cache.
+            self._last_updated[key] += 1
+            # Case 2: the other thread already exited this locked code block and set the
+            #         cache. Invalidate it.
+            discard(self.cache, key)
+        else:
+            # No race condition
+            self._last_updated[key] += 1
+            if self.update_on_set:
+                self.cache[key] = value
+
+    @locked
     def __delitem__(self, key: KT) -> None:
-        try:
-            del self.cache[key]
-        except KeyError:
-            pass
         del self.data[key]
+        del self._last_updated[key]
+        discard(self.cache, key)
 
     def __len__(self) -> int:
         return len(self.data)

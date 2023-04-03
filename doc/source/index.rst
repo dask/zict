@@ -36,8 +36,8 @@ zlib-compressed, directory of files.
 
 Thread-safety
 -------------
-This library is only partially thread-safe. Refer to the documentation of the individual
-mappings for details.
+Most classes in this library are thread-safe.
+Refer to the documentation of the individual mappings for exceptions.
 
 API
 ---
@@ -64,8 +64,6 @@ API
 
 Additionally, **zict** makes available the following general-purpose objects:
 
-.. autoclass:: Accumulator
-   :members:
 .. autoclass:: InsertionSortedSet
    :members:
 .. autoclass:: WeakValueMapping

@@ -3,8 +3,8 @@ from threading import Barrier
 
 import pytest
 
-from zict import Accumulator, InsertionSortedSet
-from zict.utils import ATOMIC_INT_IADD
+from zict import InsertionSortedSet
+from zict.tests import utils_test
 
 
 def test_insertion_sorted_set():
@@ -81,6 +81,8 @@ def test_insertion_sorted_set():
     assert [s.pop() for _ in range(len(s))] == [7, 2, 0, 6, 4, 5, 1, 3]
 
 
+@pytest.mark.stress
+@pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
 @pytest.mark.parametrize("method,size", [("popleft", 100_000), ("popright", 5_000_000)])
 def test_insertion_sorted_set_threadsafe(method, size):
     s = InsertionSortedSet(range(size))
@@ -108,66 +110,3 @@ def test_insertion_sorted_set_threadsafe(method, size):
         # On Windows, we've seen as little as 2300.
         assert f1.result() > 100
         assert f2.result() > 100
-
-
-def test_accumulator():
-    acc = Accumulator()
-    assert acc == 0
-    acc = Accumulator(123)
-    assert acc == 123
-    assert repr(acc) == "123"
-    acc += 1
-    assert acc == 124
-    acc -= 1
-    assert acc == 123
-    acc += 0.5
-    assert acc == 123.5
-
-    # Test operators
-    assert int(acc) == 123
-    assert float(acc) == 123.5
-    assert not acc != 123.5
-    assert acc >= 123.5
-    assert not acc >= 124
-    assert acc > 123
-    assert not acc > 123.5
-    assert acc <= 123.5
-    assert not acc <= 123
-    assert acc < 124
-    assert not acc < 123
-    assert acc + 1 == 124.5
-    assert acc - 1 == 122.5
-    assert acc * 2 == 247
-    assert acc / 2 == 61.75
-    assert hash(acc) == hash(123.5)
-
-
-@pytest.mark.parametrize("dtype", [int, float])
-def test_accumulator_threadsafe(dtype):
-    acc = Accumulator(dtype(2))
-    if ATOMIC_INT_IADD:
-        # CPython >= 3.10
-        assert isinstance(acc, dtype)
-        N = 10_000_000
-        expect = 99999970000002
-    else:
-        assert isinstance(acc, Accumulator)
-        N = 1_000_000
-        expect = 999997000002
-
-    barrier = Barrier(2)
-
-    def t():
-        nonlocal acc
-        barrier.wait()
-        for i in range(N):
-            acc += i
-            acc -= 1
-            assert acc >= 0
-
-    with ThreadPoolExecutor(2) as ex:
-        f1 = ex.submit(t)
-        f2 = ex.submit(t)
-        f1.result()
-        f2.result()
-    assert acc == expect

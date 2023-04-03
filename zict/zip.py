@@ -41,6 +41,7 @@ class Zip(MutableMapping[str, bytes]):
     _file: zipfile.ZipFile | None
 
     def __init__(self, filename: str, mode: FileMode = "a"):
+        super().__init__()
         self.filename = filename
         self.mode = mode
         self._file = None

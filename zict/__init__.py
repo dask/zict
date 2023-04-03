@@ -6,7 +6,6 @@ from zict.func import Func as Func
 from zict.lmdb import LMDB as LMDB
 from zict.lru import LRU as LRU
 from zict.sieve import Sieve as Sieve
-from zict.utils import Accumulator as Accumulator
 from zict.utils import InsertionSortedSet as InsertionSortedSet
 from zict.zip import Zip as Zip
 
