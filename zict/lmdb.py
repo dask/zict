@@ -66,6 +66,8 @@ class LMDB(ZictBase[str, bytes]):
         )
 
     def __getitem__(self, key: str) -> bytes:
+        if not isinstance(key, str):
+            raise KeyError(key)
         with self.db.begin() as txn:
             value = txn.get(_encode_key(key))
         if value is None:
@@ -73,6 +75,10 @@ class LMDB(ZictBase[str, bytes]):
         return value
 
     def __setitem__(self, key: str, value: bytes) -> None:
+        if not isinstance(key, str):
+            raise TypeError(key)
+        if not isinstance(value, bytes):
+            raise TypeError(value)
         with self.db.begin(write=True) as txn:
             txn.put(_encode_key(key), value)
 
@@ -94,12 +100,21 @@ class LMDB(ZictBase[str, bytes]):
 
     def _do_update(self, items: Iterable[tuple[str, bytes]]) -> None:
         # Optimized version of update() using a single putmulti() call.
-        items_enc = [(_encode_key(k), v) for k, v in items]
+        items_enc = []
+        for key, value in items:
+            if not isinstance(key, str):
+                raise TypeError(key)
+            if not isinstance(value, bytes):
+                raise TypeError(value)
+            items_enc.append((_encode_key(key), value))
+
         with self.db.begin(write=True) as txn:
             consumed, added = txn.cursor().putmulti(items_enc)
             assert consumed == added == len(items_enc)
 
     def __delitem__(self, key: str) -> None:
+        if not isinstance(key, str):
+            raise KeyError(key)
         with self.db.begin(write=True) as txn:
             if not txn.delete(_encode_key(key)):
                 raise KeyError(key)
@@ -121,7 +136,7 @@ class LMDBItemsView(ItemsView[str, bytes]):
         key, value = item  # type: ignore
         try:
             v = self._mapping[key]
-        except (KeyError, AttributeError):
+        except KeyError:
             return False
         else:
             return v == value

@@ -117,7 +117,7 @@ def discard(m: MutableMapping[KT, VT], key: KT) -> None:
 
 def locked(func: Callable[P, VT]) -> Callable[P, VT]:
     """Decorator for a method of ZictBase, which wraps the whole method in a
-    mapping-global rlock.
+    instance-specific (but not key-specific) rlock.
     """
 
     @wraps(func)

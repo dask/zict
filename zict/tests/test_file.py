@@ -8,7 +8,7 @@ from zict import File
 from zict.tests import utils_test
 
 
-def test_mapping(tmp_path):
+def test_mapping(tmp_path, check_fd_leaks):
     """
     Test mapping interface for File().
     """
@@ -17,7 +17,7 @@ def test_mapping(tmp_path):
 
 
 @pytest.mark.parametrize("dirtype", [str, pathlib.Path, lambda x: x])
-def test_implementation(tmp_path, dirtype):
+def test_implementation(tmp_path, check_fd_leaks, dirtype):
     z = File(dirtype(tmp_path))
     assert not z
 
@@ -32,7 +32,7 @@ def test_implementation(tmp_path, dirtype):
     assert out == b"123"
 
 
-def test_memmap_implementation(tmp_path):
+def test_memmap_implementation(tmp_path, check_fd_leaks):
     z = File(tmp_path, memmap=True)
     assert not z
 
@@ -48,18 +48,18 @@ def test_memmap_implementation(tmp_path):
     assert mv2 == b"223"
 
 
-def test_str(tmp_path):
+def test_str(tmp_path, check_fd_leaks):
     z = File(tmp_path)
     assert str(z) == repr(z) == f"<File: {tmp_path}, 0 elements>"
 
 
-def test_setitem_typeerror(tmp_path):
+def test_setitem_typeerror(tmp_path, check_fd_leaks):
     z = File(tmp_path)
     with pytest.raises(TypeError):
         z["x"] = 123
 
 
-def test_contextmanager(tmp_path):
+def test_contextmanager(tmp_path, check_fd_leaks):
     with File(tmp_path) as z:
         z["x"] = b"123"
 
@@ -67,7 +67,7 @@ def test_contextmanager(tmp_path):
         assert fh.read() == b"123"
 
 
-def test_delitem(tmp_path):
+def test_delitem(tmp_path, check_fd_leaks):
     z = File(tmp_path)
 
     z["x"] = b"123"
@@ -82,14 +82,14 @@ def test_delitem(tmp_path):
     assert os.listdir(tmp_path) == ["x#2"]
 
 
-def test_missing_key(tmp_path):
+def test_missing_key(tmp_path, check_fd_leaks):
     z = File(tmp_path)
 
     with pytest.raises(KeyError):
         z["x"]
 
 
-def test_arbitrary_chars(tmp_path):
+def test_arbitrary_chars(tmp_path, check_fd_leaks):
     z = File(tmp_path)
 
     # Avoid hitting the Windows max filename length
@@ -118,11 +118,17 @@ def test_arbitrary_chars(tmp_path):
             z[key]
 
 
-def test_write_list_of_bytes(tmp_path):
+def test_write_list_of_bytes(tmp_path, check_fd_leaks):
     z = File(tmp_path)
 
     z["x"] = [b"123", b"4567"]
     assert z["x"] == b"1234567"
+
+
+def test_bad_types(tmp_path, check_fd_leaks):
+    z = File(tmp_path)
+    utils_test.check_bad_key_types(z)
+    utils_test.check_bad_value_types(z)
 
 
 @pytest.mark.stress

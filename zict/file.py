@@ -135,7 +135,13 @@ class File(ZictBase[str, bytes]):
                 fh.writelines(value)
             else:
                 fh.write(value)
-        self.filenames[key] = fn
+
+        if key in self.filenames:
+            # Race condition: two calls to __setitem__ from different threads on the
+            # same key at the same time
+            os.remove(os.path.join(self.directory, fn))
+        else:
+            self.filenames[key] = fn
 
     def __contains__(self, key: object) -> bool:
         return key in self.filenames

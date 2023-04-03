@@ -1,7 +1,5 @@
-import gc
 import os
 import pathlib
-import sys
 
 import pytest
 
@@ -12,14 +10,14 @@ pytest.importorskip("lmdb")
 
 
 @pytest.mark.parametrize("dirtype", [str, pathlib.Path, lambda x: x])
-def test_dirtypes(tmp_path, dirtype):
+def test_dirtypes(tmp_path, check_fd_leaks, dirtype):
     z = LMDB(tmp_path)
     z["x"] = b"123"
     assert z["x"] == b"123"
     del z["x"]
 
 
-def test_mapping(tmp_path):
+def test_mapping(tmp_path, check_fd_leaks):
     """
     Test mapping interface for LMDB().
     """
@@ -27,7 +25,13 @@ def test_mapping(tmp_path):
     utils_test.check_mapping(z)
 
 
-def test_reuse(tmp_path):
+def test_bad_types(tmp_path, check_fd_leaks):
+    z = LMDB(tmp_path)
+    utils_test.check_bad_key_types(z)
+    utils_test.check_bad_value_types(z)
+
+
+def test_reuse(tmp_path, check_fd_leaks):
     """
     Test persistence of a LMDB() mapping.
     """
@@ -40,35 +44,23 @@ def test_reuse(tmp_path):
         assert z["abc"] == b"123"
 
 
-def test_creates_dir(tmp_path):
-    with LMDB(tmp_path):
+def test_creates_dir(tmp_path, check_fd_leaks):
+    with LMDB(tmp_path, check_fd_leaks):
         assert os.path.isdir(tmp_path)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="requires psutil.Process.num_fds")
-def test_file_descriptors_dont_leak(tmp_path):
-    psutil = pytest.importorskip("psutil")
-    proc = psutil.Process()
-    before = proc.num_fds()
-
+def test_file_descriptors_dont_leak(tmp_path, check_fd_leaks):
     z = LMDB(tmp_path)
     del z
-    gc.collect()
-
-    assert proc.num_fds() == before
 
     z = LMDB(tmp_path)
     z.close()
 
-    assert proc.num_fds() == before
-
     with LMDB(tmp_path) as z:
         pass
 
-    assert proc.num_fds() == before
 
-
-def test_map_size(tmp_path):
+def test_map_size(tmp_path, check_fd_leaks):
     import lmdb
 
     z = LMDB(tmp_path, map_size=2**20)

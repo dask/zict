@@ -55,13 +55,30 @@ class Zip(MutableMapping[str, bytes]):
         return self._file
 
     def __getitem__(self, key: str) -> bytes:
+        if not isinstance(key, str):
+            raise KeyError(key)
         return self.file.read(key)
 
-    def __setitem__(self, key: str, value: bytes) -> None:
+    def __setitem__(self, key: str, value: bytes | bytearray | memoryview) -> None:
+        if not isinstance(key, str):
+            raise TypeError(key)
+        if not isinstance(value, (bytes, bytearray, memoryview)):
+            raise TypeError(value)
+        if key in self:
+            raise NotImplementedError("Not supported by stdlib zipfile")
         self.file.writestr(key, value)
 
     def __iter__(self) -> Iterator[str]:
         return (zi.filename for zi in self.file.filelist)
+
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
+        try:
+            self.file.getinfo(key)
+            return True
+        except KeyError:
+            return False
 
     def __delitem__(self, key: str) -> None:  # pragma: nocover
         raise NotImplementedError("Not supported by stdlib zipfile")
