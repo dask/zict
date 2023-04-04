@@ -209,6 +209,19 @@ def test_callbacks_exception_catch():
     assert b == {"x": 1, "y": 2, "z": 8}
 
 
+def test_n_offset():
+    buff = Buffer({}, {}, n=5)
+    assert buff.n == 5
+    assert buff.fast.n == 5
+    buff.n = 3
+    assert buff.fast.n == 3
+    assert buff.offset == 0
+    assert buff.fast.offset == 0
+    buff.offset = 2
+    assert buff.offset == 2
+    assert buff.fast.offset == 2
+
+
 def test_set_noevict():
     a = {}
     b = {}

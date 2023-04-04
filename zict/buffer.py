@@ -95,7 +95,45 @@ class Buffer(ZictBase[KT, VT]):
 
     @property
     def n(self) -> float:
+        """Maximum weight in the fast mapping before eviction happens.
+        Can be updated; this won't trigger eviction by itself; you should call
+        :meth:`evict_until_below_target` afterwards.
+
+        See also
+        --------
+        offset
+        evict_until_below_target
+        LRU.n
+        LRU.offset
+        """
         return self.fast.n
+
+    @n.setter
+    def n(self, value: float) -> None:
+        self.fast.n = value
+
+    @property
+    def offset(self) -> float:
+        """Offset to add to the total weight in the fast buffer to determine when
+        eviction happens. Note that increasing offset is not the same as decreasing n,
+        as the latter also changes what keys qualify as "heavy" and should not be stored
+        in fast.
+
+        Always starts at zero and can be updated; this won't trigger eviction by itself;
+        you should call :meth:`evict_until_below_target` afterwards.
+
+        See also
+        --------
+        n
+        evict_until_below_target
+        LRU.n
+        LRU.offset
+        """
+        return self.fast.offset
+
+    @offset.setter
+    def offset(self, value: float) -> None:
+        self.fast.offset = value
 
     def fast_to_slow(self, key: KT, value: VT) -> None:
         self.slow[key] = value
