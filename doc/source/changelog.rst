@@ -28,7 +28,7 @@ Changelog
   quietly corrupting the mapping (:pr:`95`) `Guido Imperiale`_
 - Can now change ``LRU.n`` on the fly. Added :ivar:`LRU.offset` attribute. Added
   accessors to ``n`` and ``offset`` to :class:`Buffer`.
-  (:pr:`TODO`) `Guido Imperiale`_
+  (:pr:`101`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28
