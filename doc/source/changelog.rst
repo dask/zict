@@ -26,6 +26,8 @@ Changelog
 - ``Zip.__contains__`` no longer reads the value from disk (:pr:`95`) `Guido Imperiale`_
 - ``Zip.__setitem__`` will now raise when updating an already-existing key instead of
   quietly corrupting the mapping (:pr:`95`) `Guido Imperiale`_
+- New object :class:`AsyncBuffer`; new method :meth:`LRU.get_all_or_nothing`
+  (:pr:`88`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28

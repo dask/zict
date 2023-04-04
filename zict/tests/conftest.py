@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gc
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -39,3 +40,16 @@ def is_locked():
             return ex.submit(__is_locked, d).result()
 
         yield _is_locked
+
+
+@pytest.fixture
+def check_thread_leaks():
+    active_threads_start = threading.enumerate()
+
+    yield
+
+    bad_threads = [
+        thread for thread in threading.enumerate() if thread not in active_threads_start
+    ]
+    if bad_threads:
+        raise RuntimeError(f"Leaked thread(s): {bad_threads}")
