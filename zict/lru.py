@@ -123,10 +123,7 @@ class LRU(ZictBase[KT, VT]):
         try:
             self.evict_until_below_target()
         except Exception:
-            if (
-                self.weights.get(key, 0) + self.offset > self.n
-                and key not in self.heavy
-            ):
+            if self.weights.get(key, 0) > self.n and key not in self.heavy:
                 # weight(value) > n and evicting the key we just inserted failed.
                 # Evict the rest of the LRU instead.
                 try:
