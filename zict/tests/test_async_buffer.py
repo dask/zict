@@ -81,17 +81,25 @@ async def test_double_evict(check_thread_leaks):
 
         buff.async_evict_until_below_target(2)
         assert len(buff.futures) == 1
+        assert list(buff.evicting.values()) == [2]
 
         # Evicting to the same n is a no-op
         buff.async_evict_until_below_target(2)
         assert len(buff.futures) == 1
+        assert list(buff.evicting.values()) == [2]
 
         # Evicting to a lower n while a previous eviction is still running does not
         # cancel the previous eviction
         buff.async_evict_until_below_target(1)
         assert len(buff.futures) == 2
-        assert all(not fut.done() for fut in buff.futures)
+        assert list(buff.evicting.values()) == [2, 1]
+        await asyncio.wait(buff.futures, return_when=asyncio.FIRST_COMPLETED)
+        assert len(buff.futures) == 1
+        assert list(buff.evicting.values()) == [1]
         await asyncio.wait(buff.futures)
+        assert not buff.futures
+        assert not buff.evicting
+
         assert buff.fast == {"z": 3}
         assert buff.slow.data == {"x": 1, "y": 2}
 
@@ -99,6 +107,7 @@ async def test_double_evict(check_thread_leaks):
         buff.evict_until_below_target(0)
         buff.async_evict_until_below_target(-1)
         assert not buff.futures
+        assert not buff.evicting
 
 
 @pytest.mark.asyncio

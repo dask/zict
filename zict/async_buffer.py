@@ -5,6 +5,7 @@ import contextvars
 from collections.abc import Callable, Collection
 from concurrent.futures import Executor, ThreadPoolExecutor
 from functools import wraps
+from itertools import chain
 from typing import Any, Literal
 
 from zict.buffer import Buffer
@@ -41,7 +42,7 @@ class AsyncBuffer(Buffer[KT, VT]):
     executor: Executor | None
     nthreads: int | None
     futures: set[asyncio.Future]
-    evicting: float | None
+    evicting: dict[asyncio.Future, float]
 
     @wraps(Buffer.__init__)
     def __init__(
@@ -56,7 +57,7 @@ class AsyncBuffer(Buffer[KT, VT]):
         self.nthreads = None if executor else nthreads
         self._internal_executor = executor is None
         self.futures = set()
-        self.evicting = None
+        self.evicting = {}
 
     def close(self) -> None:
         # Call LRU.close(), which stops LRU.evict_until_below_target() halfway through
@@ -164,18 +165,12 @@ class AsyncBuffer(Buffer[KT, VT]):
         if n is None:
             n = self.n
         n = max(0.0, n)
-        weight = self.fast.total_weight
-        if self.evicting is not None:
-            weight = min(weight, self.evicting)
+        weight = min(chain([self.fast.total_weight], self.evicting.values()))
         if weight <= n:
             return
-
-        self.evicting = n
-
-        def done(_: asyncio.Future) -> None:
-            self.evicting = None
 
         # Note: this can get cancelled by LRU.close(), which in turn is
         # triggered by Buffer.close()
         future = self._offload(self.evict_until_below_target, n)
-        future.add_done_callback(done)
+        self.evicting[future] = n
+        future.add_done_callback(self.evicting.__delitem__)
