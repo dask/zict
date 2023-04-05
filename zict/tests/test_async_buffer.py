@@ -3,6 +3,7 @@ import contextvars
 import threading
 import time
 from collections import UserDict
+from concurrent.futures import Executor, Future
 
 import pytest
 
@@ -211,3 +212,52 @@ async def test_race_condition_get_async_delitem(check_thread_leaks, missing):
         else:
             out = await future
             assert 0 < len(out) < 100
+
+
+@pytest.mark.asyncio
+async def test_multiple_offload_threads():
+    barrier = threading.Barrier(2)
+
+    class Slow(UserDict):
+        def __getitem__(self, key):
+            barrier.wait(timeout=5)
+            return super().__getitem__(key)
+
+    with AsyncBuffer({}, Slow(), n=100, nthreads=2) as buff:
+        buff["x"] = 1
+        buff["y"] = 2
+        buff.evict_until_below_target(0)
+        assert not buff.fast
+        assert set(buff.slow) == {"x", "y"}
+
+        out = await asyncio.gather(buff.async_get(["x"]), buff.async_get(["y"]))
+        assert out == [{"x": 1}, {"y": 2}]
+
+
+@pytest.mark.asyncio
+async def test_external_executor():
+    n_submit = 0
+
+    class MyExecutor(Executor):
+        def submit(self, fn, /, *args, **kwargs):
+            nonlocal n_submit
+            n_submit += 1
+            out = fn(*args, **kwargs)
+            f = Future()
+            f.set_result(out)
+            return f
+
+        def shutdown(self, *args, **kwargs):
+            raise AssertionError("AsyncBuffer.close() called executor.shutdown()")
+
+    ex = MyExecutor()
+    buff = AsyncBuffer({}, {}, n=1, executor=ex)
+    buff["x"] = 1
+    buff["y"] = 2  # Evict x
+    assert buff.fast.d == {"y": 2}
+    assert buff.slow == {"x": 1}
+    assert await buff.async_get(["x"]) == {"x": 1}  # Restore x, evict y
+    assert buff.fast.d == {"x": 1}
+    assert buff.slow == {"y": 2}
+    assert n_submit == 2
+    buff.close()

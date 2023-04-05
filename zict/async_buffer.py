@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextvars
 from collections.abc import Callable, Collection
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Executor, ThreadPoolExecutor
 from functools import wraps
 from typing import Any, Literal
 
@@ -21,33 +21,57 @@ class AsyncBuffer(Buffer[KT, VT]):
     thread, while all of its other methods (including, notably for the purpose of
     thread-safety consideration, ``__contains__`` and ``__delitem__``) will be called
     from the main thread.
+
+    See Also
+    --------
+    Buffer
+
+    Parameters
+    ----------
+    Same as in Buffer, plus:
+
+    executor: concurrent.futures.Executor, optional
+        An Executor instance to use for offloading. It must not pickle/unpickle.
+        Defaults to an internal ThreadPoolExecutor.
+    nthreads: int, optional
+        Number of offloaded threads to run in parallel. Defaults to 1.
+        Mutually exclusive with executor parameter.
     """
 
-    executor: ThreadPoolExecutor | None
+    executor: Executor | None
+    nthreads: int | None
     futures: set[asyncio.Future]
     evicting: float | None
 
     @wraps(Buffer.__init__)
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *args: Any,
+        executor: Executor | None = None,
+        nthreads: int = 1,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
-        self.executor = None
+        self.executor = executor
+        self.nthreads = None if executor else nthreads
+        self._internal_executor = executor is None
         self.futures = set()
         self.evicting = None
 
     def close(self) -> None:
         # Call LRU.close(), which stops LRU.evict_until_below_target() halfway through
         super().close()
-        if self.executor is not None:
-            # TODO just use shutdown(cancel_futures=True) (requires Python >=3.9)
-            for future in self.futures:
-                future.cancel()
+        for future in self.futures:
+            future.cancel()
+        if self.executor is not None and self.nthreads is not None:
             self.executor.shutdown(wait=True)
             self.executor = None
 
     def _offload(self, func: Callable[..., T], *args: Any) -> asyncio.Future[T]:
         if self.executor is None:
+            assert self.nthreads
             self.executor = ThreadPoolExecutor(
-                1, thread_name_prefix="zict.Buffer offloader"
+                self.nthreads, thread_name_prefix="zict.AsyncBuffer offloader"
             )
 
         loop = asyncio.get_running_loop()
