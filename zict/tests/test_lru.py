@@ -340,6 +340,36 @@ def test_flush_close():
     assert closed
 
 
+def test_update_n():
+    evicted = []
+    z = LRU(10, {}, on_evict=lambda k, v: evicted.append(k), weight=lambda k, v: v)
+    z["x"] = 5
+    assert not evicted
+
+    # Update n. This also changes what keys are considered heavy
+    # (but there isn't a full scan on the weights for already existing keys)
+    z.n = 3
+    assert not evicted
+    assert not z.heavy
+    z["y"] = 1
+    assert evicted == ["x"]
+    z["z"] = 4
+    assert evicted == ["x", "z"]
+
+
+def test_update_offset():
+    evicted = []
+    z = LRU(5, {}, on_evict=lambda k, v: evicted.append(k), weight=lambda k, v: v)
+
+    z.offset = 2
+    z["x"] = 1
+    # y would be a heavy key if we had reduced n by 2 instead of increasing offset
+    z["y"] = 2.5
+    assert evicted == ["x"]
+    z["z"] = 5.5  # Still heavy according to n alone
+    assert evicted == ["x", "z"]
+
+
 @pytest.mark.parametrize("event", ("set", "set_noevict", "del"))
 def test_cancel_evict(event):
     """See also:
