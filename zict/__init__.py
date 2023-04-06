@@ -11,4 +11,4 @@ from zict.utils import InsertionSortedSet as InsertionSortedSet
 from zict.zip import Zip as Zip
 
 # Must be kept aligned with setup.cfg
-__version__ = "2.3.0"
+__version__ = "3.0.0"

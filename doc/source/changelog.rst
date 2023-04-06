@@ -2,7 +2,7 @@ Changelog
 =========
 .. currentmodule:: zict
 
-2.3.0 - Unreleased
+3.0.0 - Unreleased
 ------------------
 - The library is now almost completely thread-safe
   (:pr:`82`, :pr:`90`, :pr:`92`, :pr:`93`)
