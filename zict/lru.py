@@ -24,7 +24,7 @@ class LRU(ZictBase[KT, VT]):
         Any individual key that is heavier than n will be automatically evicted as soon
         as it is inserted.
 
-        It can be updated after initialization. See also: :ivar:`offset`
+        It can be updated after initialization. See also: ``offset`` attribute.
     d: MutableMapping
         Dict-like in which to hold elements. There are no expectations on its internal
         ordering. Iteration on the LRU follows the order of the underlying mapping.
@@ -66,7 +66,7 @@ class LRU(ZictBase[KT, VT]):
     #: Updating this attribute doesn't trigger eviction by itself; you should call
     #: :meth:`evict_until_below_target` explicitly afterwards.
     n: float
-    #: Offset to add to :ivar:`total_weight` to determine if key/value pairs should be
+    #: Offset to add to ``total_weight`` to determine if key/value pairs should be
     #: evicted. It always starts at zero and can be updated afterwards. Updating this
     #: attribute doesn't trigger eviction by itself; you should call
     #: :meth:`evict_until_below_target` explicitly afterwards.
