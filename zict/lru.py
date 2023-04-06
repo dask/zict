@@ -20,6 +20,10 @@ class LRU(ZictBase[KT, VT]):
     ----------
     n: int or float
         Number of elements to keep, or total weight if ``weight`` is used.
+        Any individual key that is heavier than n will be automatically evicted as soon
+        as it is inserted.
+
+        It can be updated after initialization. See also: :ivar:`offset`
     d: MutableMapping
         Dict-like in which to hold elements. There are no expectations on its internal
         ordering. Iteration on the LRU follows the order of the underlying mapping.
@@ -57,7 +61,18 @@ class LRU(ZictBase[KT, VT]):
     on_evict: list[Callable[[KT, VT], None]]
     on_cancel_evict: list[Callable[[KT, VT], None]]
     weight: Callable[[KT, VT], float]
+    #: Maximum weight before eviction is triggered, as set during initialization.
+    #: Updating this attribute doesn't trigger eviction by itself; you should call
+    #: :meth:`evict_until_below_target` explicitly afterwards.
     n: float
+    #: Offset to add to :ivar:`total_weight` to determine if key/value pairs should be
+    #: evicted. It always starts at zero and can be updated afterwards. Updating this
+    #: attribute doesn't trigger eviction by itself; you should call
+    #: :meth:`evict_until_below_target` explicitly afterwards.
+    #: Increasing ``offset`` is not the same as reducing ``n``, as the latter will also
+    #: reduce the threshold below which a value is considered "heavy" and qualifies for
+    #: immediate eviction.
+    offset: float
     weights: dict[KT, float]
     closed: bool
     total_weight: float
@@ -79,6 +94,7 @@ class LRU(ZictBase[KT, VT]):
         super().__init__()
         self.d = d
         self.n = n
+        self.offset = 0
 
         if callable(on_evict):
             on_evict = [on_evict]
@@ -145,7 +161,7 @@ class LRU(ZictBase[KT, VT]):
         """
         if n is None:
             n = self.n
-        while self.total_weight > n and not self.closed:
+        while self.total_weight + self.offset > n and not self.closed:
             try:
                 self.evict()
             except KeyError:
@@ -239,7 +255,7 @@ class LRU(ZictBase[KT, VT]):
 
     def __str__(self) -> str:
         sub = str(self.d) if not isinstance(self.d, dict) else "dict"
-        return f"<LRU: {self.total_weight}/{self.n} on {sub}>"
+        return f"<LRU: {self.total_weight + self.offset}/{self.n} on {sub}>"
 
     __repr__ = __str__
 

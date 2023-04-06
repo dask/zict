@@ -26,6 +26,9 @@ Changelog
 - ``Zip.__contains__`` no longer reads the value from disk (:pr:`95`) `Guido Imperiale`_
 - ``Zip.__setitem__`` will now raise when updating an already-existing key instead of
   quietly corrupting the mapping (:pr:`95`) `Guido Imperiale`_
+- Can now change ``LRU.n`` on the fly. Added :ivar:`LRU.offset` attribute. Added
+  accessors to ``n`` and ``offset`` to :class:`Buffer`.
+  (:pr:`101`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28
