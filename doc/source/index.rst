@@ -47,6 +47,8 @@ API
 
 .. autoclass:: Buffer
    :members:
+.. autoclass:: AsyncBuffer
+   :members:
 .. autoclass:: Cache
    :members:
 .. autoclass:: File

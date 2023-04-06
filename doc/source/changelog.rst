@@ -29,6 +29,8 @@ Changelog
 - Can now change ``LRU.n`` on the fly. Added :ivar:`LRU.offset` attribute. Added
   accessors to ``n`` and ``offset`` to :class:`Buffer`.
   (:pr:`101`) `Guido Imperiale`_
+- New object :class:`AsyncBuffer`; new method :meth:`LRU.get_all_or_nothing`
+  (:pr:`88`) `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28

@@ -7,5 +7,6 @@ dependencies:
   - psutil
   - python-lmdb
   - pytest
+  - pytest-asyncio
   - pytest-repeat
   - pytest-timeout

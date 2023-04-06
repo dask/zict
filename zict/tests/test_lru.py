@@ -290,6 +290,16 @@ def test_init_not_empty():
     assert list(lru1.heavy) == list(lru2.heavy) == [4]
 
 
+def test_get_all_or_nothing():
+    lru = LRU(100, {"x": 1, "y": 2, "z": 3})
+    assert list(lru.order) == ["x", "y", "z"]
+    with pytest.raises(KeyError, match="w"):
+        lru.get_all_or_nothing(["x", "w", "y"])
+    assert list(lru.order) == ["x", "y", "z"]
+    assert lru.get_all_or_nothing(["y", "x"]) == {"y": 2, "x": 1}
+    assert list(lru.order) == ["z", "y", "x"]
+
+
 def test_close_aborts_eviction():
     evicted = []
 

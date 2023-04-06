@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import (
     Callable,
+    Collection,
     ItemsView,
     Iterator,
     KeysView,
@@ -116,6 +117,19 @@ class LRU(ZictBase[KT, VT]):
         result = self.d[key]
         self.order.remove(key)
         self.order.add(key)
+        return result
+
+    @locked
+    def get_all_or_nothing(self, keys: Collection[KT]) -> dict[KT, VT]:
+        """If all keys exist in the LRU, update their FIFO priority and return their
+        values; this would be the same as ``{k: lru[k] for k in keys}``.
+        If any keys are missing, however, raise KeyError for the first one missing and
+        do not bring any of the available keys to the top of the LRU.
+        """
+        result = {key: self.d[key] for key in keys}
+        for key in keys:
+            self.order.remove(key)
+            self.order.add(key)
         return result
 
     def __setitem__(self, key: KT, value: VT) -> None:
