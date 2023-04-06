@@ -4,33 +4,31 @@ Changelog
 
 2.3.0 - Unreleased
 ------------------
-- Dropped support for Python 3.7 (:pr:`84`) `Guido Imperiale`_
+- The library is now almost completely thread-safe
+  (:pr:`82`, :pr:`90`, :pr:`92`, :pr:`93`)
+- Dropped support for Python 3.7 (:pr:`84`)
 - ``File.__getitem__`` now returns bytearray instead of bytes. This prevents a memcpy
-  when deserializing numpy arrays with dask. (:pr:`74`) `Guido Imperiale`_
-- Removed dependency from ``heapdict``; sped up ``LRU``. (:pr:`77`) `Guido Imperiale`_
-- Fixed broken ``LRU`` state when the underlying mapping starts non-empty.
-  (:pr:`77`) `Guido Imperiale`_
-- ``File`` and ``LMDB`` now support :class:`pathlib.Path` and pytest's ``tmpdir``.
-  (:pr:`78`) `Guido Imperiale`_
-- ``LMDB`` now uses memory-mapped I/O on MacOSX and is usable on Windows.
-  (:pr:`78`) `Guido Imperiale`_
-- The library is now almost completely thread-safe.
-  (:pr:`82`, :pr:`90`, :pr:`92`, :pr:`93`) `Guido Imperiale`_
-- :class:`LRU` and :class:`Buffer` now support delayed eviction.
-  New object :class:`InsertionSortedSet`.
-  (:pr:`87`) `Guido Imperiale`_
+  when deserializing numpy arrays with dask. (:pr:`74`)
+- Removed dependency from ``heapdict``; sped up :class:`LRU` (:pr:`77`)
+- Fixed broken :class:`LRU` state when the underlying mapping starts non-empty.
+  (:pr:`77`)
+- :class:`File` and :class:`LMDB` now support :class:`pathlib.Path` and pytest's
+  ``tmpdir`` (:pr:`78`)
+- :class:`LMDB` now uses memory-mapped I/O on MacOSX and is usable on Windows (:pr:`78`)
+- :class:`LRU` and :class:`Buffer` now support delayed eviction (:pr:`87`)
+- New object :class:`InsertionSortedSet` (:pr:`87`)
 - All mappings now return proper KeysView, ItemsView, and ValuesView objects from their
-  keys(), items(), and values() methods (:pr:`93`) `Guido Imperiale`_
+  keys(), items(), and values() methods (:pr:`93`)
 - :class:`File`, :class:`LMDB`, and :class:`Zip` now behave coherently with unexpected
-  key/value types (:pr:`95`) `Guido Imperiale`_
-- ``Zip.__contains__`` no longer reads the value from disk (:pr:`95`) `Guido Imperiale`_
+  key/value types (:pr:`95`)
+- ``Zip.__contains__`` no longer reads the value from disk (:pr:`95`)
 - ``Zip.__setitem__`` will now raise when updating an already-existing key instead of
-  quietly corrupting the mapping (:pr:`95`) `Guido Imperiale`_
-- Can now change ``LRU.n`` on the fly. Added :ivar:`LRU.offset` attribute. Added
-  accessors to ``n`` and ``offset`` to :class:`Buffer`.
-  (:pr:`101`) `Guido Imperiale`_
-- New object :class:`AsyncBuffer`; new method :meth:`LRU.get_all_or_nothing`
-  (:pr:`88`) `Guido Imperiale`_
+  quietly corrupting the mapping (:pr:`95`)
+- Can now change ``LRU.n`` on the fly. Added ``LRU.offset`` attribute. Added
+  accessors to ``n`` and ``offset`` to :class:`Buffer`. (:pr:`101`)
+- New object :class:`AsyncBuffer`; new method :meth:`LRU.get_all_or_nothing` (:pr:`88`)
+
+All changes by `Guido Imperiale`_
 
 
 2.2.0 - 2022-04-28
