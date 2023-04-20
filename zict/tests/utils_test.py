@@ -290,9 +290,9 @@ class SimpleDict(ZictBase, UserDict):
 
 
 class SlowDict(UserDict):
-    def __init__(self, delay):
+    def __init__(self, delay, d=None):
         self.delay = delay
-        super().__init__(self)
+        super().__init__(d)
 
     def __getitem__(self, key):
         time.sleep(self.delay)
