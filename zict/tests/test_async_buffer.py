@@ -132,8 +132,7 @@ async def test_close_during_evict(check_thread_leaks):
 
 @pytest.mark.asyncio
 async def test_close_during_get(check_thread_leaks):
-    buff = AsyncBuffer({}, utils_test.SlowDict(0.01), n=100)
-    buff.slow.data.update({i: i for i in range(100)})
+    buff = AsyncBuffer({}, utils_test.SlowDict(0.01, {i: i for i in range(100)}), n=100)
     assert len(buff) == 100
     assert not buff.fast
 
@@ -199,8 +198,7 @@ async def test_race_condition_get_async_delitem(check_thread_leaks, missing):
                 time.sleep(0.01)
             return super().__getitem__(key)
 
-    with AsyncBuffer({}, Slow(), n=100) as buff:
-        buff.slow.update({i: i for i in range(100)})
+    with AsyncBuffer({}, Slow({i: i for i in range(100)}), n=100) as buff:
         assert len(buff) == 100
 
         future = buff.async_get(list(range(100)), missing=missing)

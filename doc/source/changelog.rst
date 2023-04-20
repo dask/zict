@@ -7,6 +7,9 @@ Changelog
 - New method ``File.link()``, which acquires a file-based key from another source
   (e.g. a different memory-mapped File object)
   (:pr:`80`) `Guido Imperiale`_
+- ``Buffer`` has gained the option to preserve keys in ``slow`` when they are
+  moved back to ``fast``
+  (:pr:`80`) `Guido Imperiale`_
 
 
 3.0.0 - 2023-04-17

@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator, MutableMapping
-from itertools import chain
-from typing import (  # TODO import from collections.abc (needs Python >=3.9)
-    ItemsView,
-    ValuesView,
-)
 
 from zict.common import KT, VT, ZictBase, close, discard, flush, locked
 from zict.lru import LRU
+from zict.utils import InsertionSortedSet
 
 
 class Buffer(ZictBase[KT, VT]):
@@ -34,6 +30,11 @@ class Buffer(ZictBase[KT, VT]):
         storing to disk and raised a disk full error) the key will remain in the LRU.
     slow_to_fast_callbacks: list of callables
         These functions run every time data moves form the slow to the fast mapping.
+    keep_slow: bool, optional
+        If False (default), delete key/value pairs in slow when they are moved back to
+        fast.
+        If True, keep them in slow until deleted; this will avoid repeating the fast to
+        slow transition when they are evicted again, but at the cost of duplication.
 
     Notes
     -----
@@ -60,7 +61,9 @@ class Buffer(ZictBase[KT, VT]):
     weight: Callable[[KT, VT], float]
     fast_to_slow_callbacks: list[Callable[[KT, VT], None]]
     slow_to_fast_callbacks: list[Callable[[KT, VT], None]]
+    keep_slow: bool
     _cancel_restore: dict[KT, bool]
+    _keys: InsertionSortedSet[KT]
 
     def __init__(
         self,
@@ -74,6 +77,7 @@ class Buffer(ZictBase[KT, VT]):
         slow_to_fast_callbacks: Callable[[KT, VT], None]
         | list[Callable[[KT, VT], None]]
         | None = None,
+        keep_slow: bool = False,
     ):
         super().__init__()
         self.fast = LRU(
@@ -91,7 +95,9 @@ class Buffer(ZictBase[KT, VT]):
             slow_to_fast_callbacks = [slow_to_fast_callbacks]
         self.fast_to_slow_callbacks = fast_to_slow_callbacks or []
         self.slow_to_fast_callbacks = slow_to_fast_callbacks or []
+        self.keep_slow = keep_slow
         self._cancel_restore = {}
+        self._keys = InsertionSortedSet((*self.fast, *self.slow))
 
     @property
     def n(self) -> float:
@@ -136,6 +142,9 @@ class Buffer(ZictBase[KT, VT]):
         self.fast.offset = value
 
     def fast_to_slow(self, key: KT, value: VT) -> None:
+        if self.keep_slow and key in self.slow:
+            return
+
         self.slow[key] = value
         try:
             for cb in self.fast_to_slow_callbacks:
@@ -169,7 +178,8 @@ class Buffer(ZictBase[KT, VT]):
             # - If the below code was just `self.fast[key] = value; del
             #   self.slow[key]` now the key would be in neither slow nor fast!
             self.fast.set_noevict(key, value)
-            del self.slow[key]
+            if not self.keep_slow:
+                del self.slow[key]
 
         with self.unlock():
             self.fast.evict_until_below_target()
@@ -180,17 +190,20 @@ class Buffer(ZictBase[KT, VT]):
 
     @locked
     def __getitem__(self, key: KT) -> VT:
+        if key not in self._keys:
+            raise KeyError(key)
         try:
             return self.fast[key]
         except KeyError:
             return self.slow_to_fast(key)
 
     def __setitem__(self, key: KT, value: VT) -> None:
-        with self.lock:
-            discard(self.slow, key)
-            if key in self._cancel_restore:
-                self._cancel_restore[key] = True
-        self.fast[key] = value
+        self.set_noevict(key, value)
+        try:
+            self.fast.evict_until_below_target()
+        except Exception:
+            self.fast._setitem_exception(key)
+            raise
 
     @locked
     def set_noevict(self, key: KT, value: VT) -> None:
@@ -201,6 +214,7 @@ class Buffer(ZictBase[KT, VT]):
         if key in self._cancel_restore:
             self._cancel_restore[key] = True
         self.fast.set_noevict(key, value)
+        self._keys.add(key)
 
     def evict_until_below_target(self, n: float | None = None) -> None:
         """Wrapper around :meth:`zict.LRU.evict_until_below_target`.
@@ -210,55 +224,32 @@ class Buffer(ZictBase[KT, VT]):
 
     @locked
     def __delitem__(self, key: KT) -> None:
+        self._keys.remove(key)
         if key in self._cancel_restore:
             self._cancel_restore[key] = True
-        try:
-            del self.fast[key]
-        except KeyError:
-            del self.slow[key]
+        discard(self.fast, key)
+        discard(self.slow, key)
 
     @locked
     def _cancel_evict(self, key: KT, value: VT) -> None:
         discard(self.slow, key)
 
-    def values(self) -> ValuesView[VT]:
-        return BufferValuesView(self)
-
-    def items(self) -> ItemsView[KT, VT]:
-        return BufferItemsView(self)
-
     def __len__(self) -> int:
-        with self.lock, self.fast.lock:
-            return (
-                len(self.fast)
-                + len(self.slow)
-                - sum(
-                    k in self.fast and k in self.slow
-                    for k in chain(self._cancel_restore, self.fast._cancel_evict)
-                )
-            )
+        return len(self._keys)
 
     def __iter__(self) -> Iterator[KT]:
-        """Make sure that the iteration is not disrupted if you evict/restore a key in
-        the middle of it
-        """
-        seen = set()
-        while True:
-            try:
-                for d in (self.fast, self.slow):
-                    for key in d:
-                        if key not in seen:
-                            seen.add(key)
-                            yield key
-                return
-            except RuntimeError:
-                pass
+        return iter(self._keys)
 
     def __contains__(self, key: object) -> bool:
-        return key in self.fast or key in self.slow
+        return key in self._keys
 
+    @locked
     def __str__(self) -> str:
-        return f"Buffer<{self.fast}, {self.slow}>"
+        s = f"Buffer<fast: {len(self.fast)}, slow: {len(self.slow)}"
+        if self.keep_slow:
+            ndup = len(self.fast) + len(self.slow) - len(self._keys)
+            s += f", unique: {len(self._keys)}, duplicates: {ndup}"
+        return s + ">"
 
     __repr__ = __str__
 
@@ -267,25 +258,3 @@ class Buffer(ZictBase[KT, VT]):
 
     def close(self) -> None:
         close(self.fast, self.slow)
-
-
-class BufferItemsView(ItemsView[KT, VT]):
-    _mapping: Buffer  # FIXME CPython implementation detail
-    __slots__ = ()
-
-    def __iter__(self) -> Iterator[tuple[KT, VT]]:
-        # Avoid changing the LRU
-        return chain(self._mapping.fast.items(), self._mapping.slow.items())
-
-
-class BufferValuesView(ValuesView[VT]):
-    _mapping: Buffer  # FIXME CPython implementation detail
-    __slots__ = ()
-
-    def __contains__(self, value: object) -> bool:
-        # Avoid changing the LRU
-        return any(value == v for v in self)
-
-    def __iter__(self) -> Iterator[VT]:
-        # Avoid changing the LRU
-        return chain(self._mapping.fast.values(), self._mapping.slow.values())

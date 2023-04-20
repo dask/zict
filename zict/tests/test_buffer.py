@@ -68,6 +68,98 @@ def test_simple():
     assert buff["b"] == 1000
 
 
+def test_keep_slow():
+    a = {}
+    b = {}
+    f2s = []
+    s2f = []
+    buff = Buffer(
+        a,
+        b,
+        n=10,
+        weight=lambda k, v: v,
+        keep_slow=True,
+        fast_to_slow_callbacks=lambda k, v: f2s.append(k),
+        slow_to_fast_callbacks=lambda k, v: s2f.append(k),
+    )
+
+    buff["x"] = 1
+    buff["y"] = 2
+    buff["z"] = 11
+    buff.fast.evict()
+    assert a == {"y": 2}
+    assert b == {"x": 1, "z": 11}
+    assert f2s == ["z", "x"]
+    assert s2f == []
+    assert buff.fast.total_weight == 2
+    f2s.clear()
+
+    assert buff["x"] == 1  # Get from slow
+    assert buff["x"] == 1  # It's in both
+    assert buff["z"] == 11  # Too large to stay in fast
+    assert a == {"x": 1, "y": 2}
+    assert b == {"x": 1, "z": 11}
+    assert f2s == []
+    assert s2f == ["x", "z"]  # x has been moved only once
+    assert buff.fast.total_weight == 3
+    # Test no duplicates
+    assert len(buff) == 3
+    assert list(buff) == list(buff.keys()) == ["x", "y", "z"]
+    assert list(buff.items()) == [("x", 1), ("y", 2), ("z", 11)]
+    assert list(buff.values()) == [1, 2, 11]
+    f2s.clear()
+    s2f.clear()
+
+    assert (
+        str(buff)
+        == repr(buff)
+        == ("Buffer<fast: 2, slow: 2, unique: 3, duplicates: 1>")
+    )
+
+    # Evict a key that is already in slow
+    _ = buff["y"]
+    buff.fast.evict()
+    assert a == {"y": 2}
+    assert b == {"x": 1, "z": 11}
+    assert f2s == []  # fast_to_slow_callback was not called
+    assert s2f == []
+    assert buff.fast.total_weight == 2
+    assert len(buff) == 3
+    _ = buff["x"]
+    s2f.clear()
+
+    # Overwrite
+    buff["x"] = 3
+    buff["y"] = 4
+    buff["z"] = 12
+    assert a == {"x": 3, "y": 4}
+    assert b == {"z": 12}
+    assert f2s == ["z"]  # One more spill for z
+    assert s2f == []
+    assert buff.fast.total_weight == 7
+    assert len(buff) == 3
+    f2s.clear()
+
+    # Delete
+    del buff["x"]
+    del buff["y"]
+    del buff["z"]
+    assert a == b == {}
+    assert f2s == s2f == []
+    assert buff.fast.total_weight == 0
+    assert len(buff) == 0
+
+
+@pytest.mark.parametrize("keep_slow", [False, True])
+def test_init_nonempty(keep_slow):
+    a = {1: 10, 2: 20}
+    b = {2: 20, 3: 30}
+    buff = Buffer(a, b, n=10, keep_slow=keep_slow)
+    assert len(buff) == 3
+    assert list(buff) == [1, 2, 3]
+    assert buff == {1: 10, 2: 20, 3: 30}
+
+
 def test_setitem_avoid_fast_slow_duplicate():
     a = {}
     b = {}
@@ -89,17 +181,19 @@ def test_setitem_avoid_fast_slow_duplicate():
         assert "a" not in b
 
 
-def test_mapping():
+@pytest.mark.parametrize("keep_slow", [False, True])
+def test_mapping(keep_slow):
     """
     Test mapping interface for Buffer().
     """
     a = {}
     b = {}
-    buff = Buffer(a, b, n=2)
+    buff = Buffer(a, b, n=2, keep_slow=keep_slow)
     utils_test.check_mapping(buff)
     utils_test.check_closing(buff)
 
     buff.clear()
+    assert not buff._keys
     assert not buff.slow
     assert not buff._cancel_restore
     assert not buff.fast
@@ -107,6 +201,7 @@ def test_mapping():
     assert not buff.fast.weights
     assert not buff.fast.total_weight
     assert not buff.fast._cancel_evict
+    assert len(buff) == 0
 
 
 def test_callbacks():
@@ -222,7 +317,8 @@ def test_n_offset():
     assert buff.fast.offset == 2
 
 
-def test_set_noevict():
+@pytest.mark.parametrize("keep_slow", [False, True])
+def test_set_noevict(keep_slow):
     a = {}
     b = {}
     f2s = []
@@ -234,6 +330,7 @@ def test_set_noevict():
         weight=lambda k, v: v,
         fast_to_slow_callbacks=lambda k, v: f2s.append(k),
         slow_to_fast_callbacks=lambda k, v: s2f.append(k),
+        keep_slow=keep_slow,
     )
     buff.set_noevict("x", 3)
     buff.set_noevict("y", 3)  # Would cause x to move to slow
@@ -264,9 +361,10 @@ def test_set_noevict():
     assert s2f == []
 
 
-def test_evict_restore_during_iter():
+@pytest.mark.parametrize("keep_slow", [False, True])
+def test_evict_restore_during_iter(keep_slow):
     """Test that __iter__ won't be disrupted if another thread evicts or restores a key"""
-    buff = Buffer({"x": 1, "y": 2}, {"z": 3}, n=5)
+    buff = Buffer({"x": 1, "y": 2}, {"z": 3}, n=5, keep_slow=keep_slow)
     assert list(buff) == ["x", "y", "z"]
     it = iter(buff)
     assert next(it) == "x"
@@ -393,7 +491,8 @@ def test_cancel_restore(event, when):
 
 @pytest.mark.stress
 @pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
-def test_stress_different_keys_threadsafe():
+@pytest.mark.parametrize("keep_slow", [False, True])
+def test_stress_different_keys_threadsafe(keep_slow):
     # Sometimes x and y can cohexist without triggering eviction
     # Sometimes x and y are individually <n but when they're both in they cause eviction
     # Sometimes x or y are heavy
@@ -402,6 +501,7 @@ def test_stress_different_keys_threadsafe():
         utils_test.SlowDict(0.001),
         n=1,
         weight=lambda k, v: random.choice([0.4, 0.9, 1.1]),
+        keep_slow=keep_slow,
     )
     utils_test.check_different_keys_threadsafe(buff)
     assert not buff.fast
@@ -411,13 +511,15 @@ def test_stress_different_keys_threadsafe():
 
 @pytest.mark.stress
 @pytest.mark.repeat(utils_test.REPEAT_STRESS_TESTS)
-def test_stress_same_key_threadsafe():
+@pytest.mark.parametrize("keep_slow", [False, True])
+def test_stress_same_key_threadsafe(keep_slow):
     # Sometimes x is heavy
     buff = Buffer(
         {},
         utils_test.SlowDict(0.001),
         n=1,
         weight=lambda k, v: random.choice([0.9, 1.1]),
+        keep_slow=keep_slow,
     )
     utils_test.check_same_key_threadsafe(buff)
     assert not buff.fast
