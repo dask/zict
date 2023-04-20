@@ -146,3 +146,37 @@ def test_stress_same_key_threadsafe(tmp_path):
     z = File(tmp_path)
     utils_test.check_same_key_threadsafe(z)
     utils_test.check_mapping(z)
+
+
+@pytest.mark.parametrize("memmap", [False, True])
+def test_link(tmp_path, memmap):
+    z1 = File(tmp_path / "a", memmap=memmap)
+    z2 = File(tmp_path / "b", memmap=memmap)
+    z1["x"] = b"123"
+
+    z1.link("y", z1.get_path("x"))
+    z2.link("x", z1.get_path("x"))
+    assert z1["x"] == b"123"
+    assert z1["y"] == b"123"
+    assert z2["x"] == b"123"
+    assert sorted(os.listdir(tmp_path / "a")) == ["x#0", "y#1"]
+    assert os.listdir(tmp_path / "b") == ["x#0"]
+
+    if not memmap:
+        return
+
+    z1["x"].cast("c")[0] = b"4"
+    assert z1["y"] == b"423"
+    assert z2["x"] == b"423"
+
+    z1["x"] = b"567"
+    assert z1["x"] == b"567"
+    assert z1["y"] == b"423"
+    assert z2["x"] == b"423"
+    assert sorted(os.listdir(tmp_path / "a")) == ["x#2", "y#1"]
+    assert os.listdir(tmp_path / "b") == ["x#0"]
+
+    del z1["y"]
+    assert z2["x"] == b"423"
+    assert os.listdir(tmp_path / "a") == ["x#2"]
+    assert os.listdir(tmp_path / "b") == ["x#0"]
