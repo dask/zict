@@ -2,11 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import sys
-from collections.abc import Iterable, Iterator
-from typing import (  # TODO import from collections.abc (needs Python >=3.9)
-    ItemsView,
-    ValuesView,
-)
+from collections.abc import ItemsView, Iterable, Iterator, ValuesView
 
 from zict.common import ZictBase
 

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
 from itertools import chain
-from typing import MutableMapping  # TODO move to collections.abc (needs Python >=3.9)
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 T = TypeVar("T")

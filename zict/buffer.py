@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, MutableMapping
+from collections.abc import Callable, ItemsView, Iterator, MutableMapping, ValuesView
 from itertools import chain
-from typing import (  # TODO import from collections.abc (needs Python >=3.9)
-    ItemsView,
-    ValuesView,
-)
 
 from zict.common import KT, VT, ZictBase, close, discard, flush, locked
 from zict.lru import LRU
