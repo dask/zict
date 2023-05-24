@@ -2,6 +2,11 @@ Changelog
 =========
 .. currentmodule:: zict
 
+3.1.0 - Unreleased
+------------------
+- Dropped support for Python 3.8 (:pr:`106`) `Guido Imperiale`_
+
+
 3.0.0 - 2023-04-17
 ------------------
 - The library is now almost completely thread-safe

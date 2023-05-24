@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import weakref
 from collections.abc import Iterator, MutableMapping
-from typing import TYPE_CHECKING
 
 from zict.common import KT, VT, ZictBase, close, discard, flush, locked
 
@@ -129,20 +128,13 @@ class Cache(ZictBase[KT, VT]):
         close(self.cache, self.data)
 
 
-if TYPE_CHECKING:
-    # TODO remove this branch and just use [] in the implementation below (needs Python >=3.9)
-    class WeakValueMapping(weakref.WeakValueDictionary[KT, VT]):
-        ...
+class WeakValueMapping(weakref.WeakValueDictionary[KT, VT]):
+    """Variant of weakref.WeakValueDictionary which silently ignores objects that
+    can't be referenced by a weakref.ref
+    """
 
-else:
-
-    class WeakValueMapping(weakref.WeakValueDictionary):
-        """Variant of weakref.WeakValueDictionary which silently ignores objects that
-        can't be referenced by a weakref.ref
-        """
-
-        def __setitem__(self, key: KT, value: VT) -> None:
-            try:
-                super().__setitem__(key, value)
-            except TypeError:
-                pass
+    def __setitem__(self, key: KT, value: VT) -> None:
+        try:
+            super().__setitem__(key, value)
+        except TypeError:
+            pass

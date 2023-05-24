@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
-from typing import MutableSet  # TODO import from collections.abc (needs Python >=3.9)
+from collections.abc import Iterable, Iterator, MutableSet
 
 from zict.common import T
 
