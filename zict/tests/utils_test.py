@@ -169,7 +169,9 @@ def check_different_keys_threadsafe(
 
     def worker(idx, key, value):
         barrier.wait()
-        while any(c < 10 for c in counters):
+        # When running on a single CPU (`taskset -c 0 pytest`), multitasking can
+        # misbehave and almost completely starve one of the two threads
+        while any(c < 10 for c in counters) and all(c < 1000 for c in counters):
             z[key] = value
             try:
                 assert z[key] == value
