@@ -9,7 +9,7 @@ WT = TypeVar("WT")
 
 
 class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
-    """Buffer a MutableMapping with a pair of input/output functions
+    """Translate the values of a MutableMapping with a pair of input/output functions
 
     Parameters
     ----------
@@ -18,6 +18,10 @@ class Func(ZictBase[KT, VT], Generic[KT, VT, WT]):
     load: callable
         Function to call on value as we pull it from the mapping
     d: MutableMapping
+
+    See Also
+    --------
+    KeyMap
 
     Examples
     --------

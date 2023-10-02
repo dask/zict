@@ -5,6 +5,7 @@ Changelog
 3.1.0 - Unreleased
 ------------------
 - Dropped support for Python 3.8 (:pr:`106`) `Guido Imperiale`_
+- New object :class:`KeyMap` (:pr:`110`) `Guido Imperiale`_
 
 
 3.0.0 - 2023-04-17
