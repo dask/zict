@@ -4,22 +4,21 @@ on: [push, pull_request]
 
 jobs:
   test:
-    name: ${{ matrix.os }} ${{ matrix.python-version }}
+    name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.environment }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.9", "3.10", "3.11"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.11"]
+        environment: [alldeps]
         include:
-          - os: windows-latest
+          - os: ubuntu-latest
+            python-version: "3.10"
+            environment: alldeps
+          - os: ubuntu-latest
             python-version: "3.9"
-          - os: windows-latest
-            python-version: "3.11"
-          - os: macos-latest
-            python-version: "3.9"
-          - os: macos-latest
-            python-version: "3.11"
+            environment: nodeps
 
     steps:
       - name: Checkout source
@@ -36,7 +35,7 @@ jobs:
           activate-environment: test
           condarc-file: continuous_integration/condarc
           python-version: ${{ matrix.python-version }}
-          environment-file: continuous_integration/environment.yml
+          environment-file: continuous_integration/environment-${{ matrix.environment }}.yml
 
       - name: Install zict
         shell: bash -l {0}

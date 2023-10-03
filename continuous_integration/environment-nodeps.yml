@@ -1,0 +1,8 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - pytest
+  - pytest-asyncio
+  - pytest-repeat
+  - pytest-timeout
