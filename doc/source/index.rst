@@ -55,6 +55,8 @@ API
    :members:
 .. autoclass:: Func
    :members:
+.. autoclass:: KeyMap
+   :members:
 .. autoclass:: LMDB
    :members:
 .. autoclass:: LRU
