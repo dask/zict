@@ -1,11 +1,9 @@
 name: test
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - pip
-  - psutil
-  - python-lmdb
+  - psutil  # Enables extra tests
+  - python-lmdb  # Optional dependency
   - pytest
   - pytest-asyncio
   - pytest-repeat
