@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import sys
+import platform
 from collections.abc import ItemsView, Iterable, Iterator, ValuesView
 
 from zict.common import ZictBase
@@ -25,7 +26,8 @@ class LMDB(ZictBase[str, bytes]):
     directory: str
     map_size: int
         On Linux and MacOS, maximum size of the database file on disk.
-        Defaults to 1 TiB on 64 bit systems and 1 GiB on 32 bit ones.
+        Defaults to 128 GiB on aarch64 and riscv64, 1 TiB on other 64 bit systems like
+        x86-64 and 1 GiB on 32 bit ones.
 
         On Windows, preallocated total size of the database file on disk. Defaults to
         10 MiB to encourage explicitly setting it.
@@ -48,10 +50,17 @@ class LMDB(ZictBase[str, bytes]):
 
         super().__init__()
         if map_size is None:
-            if sys.platform != "win32":
-                map_size = min(2**40, sys.maxsize // 4)
-            else:
+            machine = platform.machine()
+            if sys.platform == "win32":
                 map_size = 10 * 2**20
+            elif machine in ["x86_64", "x64"]:
+                map_size = 2**40
+            elif machine in ["i386", "i686", "x86"]:
+                map_size = 2**30
+            elif machine.startswith("aarch64") or machine.startswith("armv8") or machine.startswith("riscv64"):
+                map_size = 2**37
+            else:
+                map_size = min(2**40, sys.maxsize // 4)
 
         self.db = lmdb.open(
             str(directory),
