@@ -7,6 +7,7 @@ from zict.func import Func as Func
 from zict.keymap import KeyMap as KeyMap
 from zict.lmdb import LMDB as LMDB
 from zict.lru import LRU as LRU
+from zict.shared_memory import SharedMemory as SharedMemory
 from zict.sieve import Sieve as Sieve
 from zict.utils import InsertionSortedSet as InsertionSortedSet
 from zict.zip import Zip as Zip
