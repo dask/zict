@@ -146,3 +146,23 @@ def test_stress_same_key_threadsafe(tmp_path):
     z = File(tmp_path)
     utils_test.check_same_key_threadsafe(z)
     utils_test.check_mapping(z)
+
+
+@pytest.mark.parametrize("memmap", [False, True])
+@pytest.mark.parametrize("value", [b"", bytearray(), memoryview(b""), [], [b"", b""]])
+def test_empty_value(tmp_path, check_fd_leaks, memmap, value):
+    z = File(tmp_path, memmap=memmap)
+    z["x"] = value
+    out = z["x"]
+    assert out == b""
+    assert isinstance(out, memoryview if memmap else bytearray)
+    assert not memoryview(out).readonly
+    del out
+
+    z["x"] = b"replacement"
+    out = z["x"]
+    assert out == b"replacement"
+    del out
+    del z["x"]
+    assert not z
+    assert not list(tmp_path.iterdir())

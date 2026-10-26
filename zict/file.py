@@ -108,6 +108,9 @@ class File(ZictBase[str, bytes]):
 
         if self.memmap:
             with open(fn, "r+b") as fh:
+                if os.fstat(fh.fileno()).st_size == 0:
+                    # Empty files cannot be memory-mapped.
+                    return memoryview(bytearray())
                 return memoryview(mmap.mmap(fh.fileno(), 0))
         else:
             with open(fn, "rb") as fh:
