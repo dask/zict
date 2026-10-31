@@ -9,9 +9,13 @@ from collections.abc import (
     MutableMapping,
     ValuesView,
 )
+from functools import wraps
+from typing import Any, TypeVar, overload
 
 from zict.common import KT, VT, NoDefault, ZictBase, close, flush, locked, nodefault
 from zict.utils import InsertionSortedSet
+
+T = TypeVar("T")
 
 
 class LRU(ZictBase[KT, VT]):
@@ -46,6 +50,9 @@ class LRU(ZictBase[KT, VT]):
     If you call methods of this class from multiple threads, access will be fast as long
     as all methods of ``d`` are fast. Callbacks are not protected by locks and can be
     arbitrarily slow.
+
+    ``pop`` and ``popitem`` hold the lock across retrieval and removal, including
+    key selection for ``popitem``. This does not protect direct access to ``d``.
 
     Examples
     --------
@@ -248,6 +255,26 @@ class LRU(ZictBase[KT, VT]):
         self.order.remove(key)
         self.heavy.discard(key)
         self.total_weight -= self.weights.pop(key)
+
+    @overload
+    def pop(self, key: KT) -> VT:
+        ...
+
+    @overload
+    def pop(self, key: KT, default: T) -> VT | T:
+        ...
+
+    @locked
+    @wraps(ZictBase.pop)
+    def pop(self, key: KT, *args: Any, **kwargs: Any) -> Any:
+        # Unlike insertion, retrieval and deletion do not invoke eviction callbacks.
+        return super().pop(key, *args, **kwargs)
+
+    @locked
+    @wraps(ZictBase.popitem)
+    def popitem(self) -> tuple[KT, VT]:
+        # Keep key selection, retrieval, and deletion in one critical section.
+        return super().popitem()
 
     def keys(self) -> KeysView[KT]:
         return self.d.keys()

@@ -6,6 +6,8 @@ Changelog
 ------------------
 - Dropped support for Python 3.8 (:pr:`106`) `Guido Imperiale`_
 - New object :class:`KeyMap` (:pr:`110`) `Guido Imperiale`_
+- Prevented concurrent updates or removals from interfering with ``LRU.pop`` and
+  ``LRU.popitem`` between retrieving and deleting an entry.
 
 
 3.0.0 - 2023-04-17
